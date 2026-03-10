@@ -1,39 +1,31 @@
-/* IMPORTACIONES DE ANGULAR
-   ======================
-   - Component: decorador para crear un componente
-   - RouterModule: módulo que proporciona <router-outlet>
-   - CommonModule: módulo con *ngIf, *ngFor, etc.
-   - OnInit: interfaz para lógica de inicialización */
-import { Component, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
+/* IMPORTACIONES
+   ============= */
+// Traigo las herramientas necesarias de Angular
+import { Component, OnInit } from '@angular/core';    // Para crear componentes
+import { RouterModule } from '@angular/router';       // Para la navegación entre páginas
+import { CommonModule } from '@angular/common';       // Para usar directivas como *ngIf, *ngFor
 
-/* DECORADOR DEL COMPONENTE RAÍZ
-   ===========================
-   - selector: 'app-root' = el componente raíz se usa en index.html como <app-root></app-root>
-   - standalone: true = componente independiente
-   - imports: módulos que usa
-   - template: el HTML del componente (en inline aquí, no en archivo separado) */
+/* DECORADOR DEL COMPONENTE
+   ======================= */
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
-    <router-outlet></router-outlet>
+  selector: 'app-root',           // Cómo voy a llamar a este componente en el HTML: <app-root>
+  standalone: true,                // Es un componente independiente (no necesita módulos)
+  imports: [CommonModule, RouterModule],  // Módulos que necesito que funcionen aquí
+  template: `                      
+    <router-outlet></router-outlet>  <!-- Este es el placeholder donde se cargarán las páginas -->
   `
 })
 
-/* CLASE DEL COMPONENTE RAÍZ
-   ========================
-   Componente simple que solo contiene el layout general (header, router-outlet, footer)
-   Incluye manejo del tema (light/dark mode) */
-export class AppComponent implements OnInit {
-  /* title: el título de la aplicación */
-  title = 'Automotores Meyer';
+/* CLASE DEL COMPONENTE
+   =================== */
+export class AppComponent implements OnInit {  // Implemento OnInit para tener el método ngOnInit
+  title = 'Automotores Meyer';  // Una variable con el nombre de mi aplicación
   
-  /* Constructor: inyectar el ThemeService */
-  constructor() {}
+  constructor() {  // Aquí normalmente inyectaría servicios que necesite
+    // Vacío por ahora, pero listo para cuando necesite servicios
+  }
 
-  /* ngOnInit: inicializar el componente */
-  ngOnInit(): void {}
+  ngOnInit(): void {  // Este método se ejecuta automáticamente al iniciar el componente
+    // Aquí pondría lógica de inicialización, como cargar datos iniciales
+  }
 }

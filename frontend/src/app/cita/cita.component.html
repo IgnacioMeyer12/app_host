@@ -1,14 +1,35 @@
+<!-- ============================================
+     VISTA CITA (cita.component.html)
+     ============================================
+     Muestra el formulario para que los clientes agenden una cita.
+     Incluye: selector de vehículo, fecha, horarios disponibles y motivo.
+     Valida disponibilidad en tiempo real y envía la cita al backend.
+     ============================================ -->
+
 <!-- CONTENEDOR PRINCIPAL DEL FORMULARIO DE CITA -->
 <div class="cita-container">
+  
+  <!-- ============================================
+       BOTÓN VOLVER
+       ============================================ -->
   <!-- BOTÓN VOLVER: Navega a home con routerLink="/" -->
   <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
   
+  <!-- ============================================
+       TÍTULO DE LA PÁGINA
+       ============================================ -->
   <!-- TÍTULO DE LA PÁGINA -->
   <h2>Solicitar Cita</h2>
 
+  <!-- ============================================
+       INDICADOR DE CARGA
+       ============================================ -->
   <!-- INDICADOR DE CARGA: Se muestra si loading = true (mientras se cargan datos del servidor) -->
   <div *ngIf="loading">Cargando...</div>
   
+  <!-- ============================================
+       MENSAJE DE ÉXITO O ERROR
+       ============================================ -->
   <!-- MENSAJE DE ÉXITO O ERROR: 
        [class] = binding dinámico de clase
        Si messageType === 'success' → añade clase 'success' (fondo verde)
@@ -16,6 +37,9 @@
        {{ message }} = muestra el contenido de la variable message -->
   <div *ngIf="message" [class]="messageType === 'success' ? 'message success' : 'message error'">{{ message }}</div>
 
+  <!-- ============================================
+       SECCIÓN 1: SELECTOR DE VEHÍCULOS
+       ============================================ -->
   <!-- SECCIÓN 1: SELECTOR DE VEHÍCULOS -->
   <div class="form-group">
     <label for="vehiculo">Vehículo</label>
@@ -33,6 +57,9 @@
     </select>
   </div>
 
+  <!-- ============================================
+       SECCIÓN 2: SELECTOR DE FECHA
+       ============================================ -->
   <!-- SECCIÓN 2: SELECTOR DE FECHA -->
   <div class="form-group">
     <label for="fecha">Fecha</label>
@@ -43,6 +70,9 @@
     <input id="fecha" type="date" [(ngModel)]="fecha" [min]="minFecha" (change)="fetchAvailability(fecha)" />
   </div>
 
+  <!-- ============================================
+       SECCIÓN 3: SELECTOR DE HORARIOS DISPONIBLES
+       ============================================ -->
   <!-- SECCIÓN 3: SELECTOR DE HORARIOS DISPONIBLES -->
   <div class="form-group">
     <label>Horarios disponibles</label>
@@ -50,11 +80,17 @@
     <div class="slots">
       <!-- *ngFor = repite <button> para cada slot (horario disponible)
            let s = variable local: cada slot es un objeto { time: '09:00', available: true/false }
-           [class.available] = añade clase CSS 'available' si s.available === true
-           [class.booked] = añade clase CSS 'booked' si s.available === false
-           [class.selected] = añade clase CSS 'selected' si selectedSlot === s.time
+           [class.available] = añade clase CSS 'available' si s.available === true (verde)
+           [class.booked] = añade clase CSS 'booked' si s.available === false (rojo/gris)
+           [class.selected] = añade clase CSS 'selected' si selectedSlot === s.time (azul)
            (click)="selectSlot(...)" = cuando hace click, llama a selectSlot() con los parámetros -->
-      <button *ngFor="let s of slots" type="button" class="slot" [class.available]="s.available" [class.booked]="!s.available" [class.selected]="selectedSlot === s.time" (click)="selectSlot(s.time, s.available)">
+      <button *ngFor="let s of slots" 
+              type="button" 
+              class="slot" 
+              [class.available]="s.available" 
+              [class.booked]="!s.available" 
+              [class.selected]="selectedSlot === s.time" 
+              (click)="selectSlot(s.time, s.available)">
         <!-- Muestra la hora del slot (ej: "09:00", "10:00") -->
         {{ s.time }}
       </button>
@@ -63,12 +99,19 @@
     <!-- LEYENDA: Explica qué significan los colores de los botones -->
     <div class="legend">
       <!-- Disponible (verde) -->
-      <span class="legend-item"><span class="box available"></span> Disponible</span>
+      <span class="legend-item">
+        <span class="box available"></span> Disponible
+      </span>
       <!-- Ocupado (rojo/gris) -->
-      <span class="legend-item"><span class="box booked"></span> Ocupado</span>
+      <span class="legend-item">
+        <span class="box booked"></span> Ocupado
+      </span>
     </div>
   </div>
 
+  <!-- ============================================
+       SECCIÓN 4: SELECTOR DE MOTIVO
+       ============================================ -->
   <!-- SECCIÓN 4: SELECTOR DE MOTIVO -->
   <div class="form-group">
     <label for="motivo">Motivo</label>
@@ -80,8 +123,12 @@
     </select>
   </div>
 
+  <!-- ============================================
+       SECCIÓN 5: BOTONES DE ACCIÓN
+       ============================================ -->
   <!-- SECCIÓN 5: BOTONES DE ACCIÓN -->
   <div class="form-actions">
+    
     <!-- BOTÓN 1: SOLICITAR CITA
          (click)="submit()" = event binding: cuando hace click, ejecuta submit()
          [disabled]="loading" = deshabilita el botón si loading === true

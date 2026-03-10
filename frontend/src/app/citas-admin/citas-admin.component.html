@@ -1,94 +1,215 @@
+<!-- ============================================
+     VISTA CITAS ADMIN (citas-admin.component.html)
+     ============================================
+     ¿Qué hace este HTML?
+     Es el panel de administración para gestionar citas.
+     Muestra dos pestañas: Pendientes (para aceptar/rechazar) y Contestadas (historial).
+     Incluye tablas con toda la información de cada cita y botones de acción.
+     ============================================ -->
+
 <div class="citas-admin-container">
-  <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
-  <h2>Citas Programadas</h2>
+  
+  <!-- ============================================
+       BOTÓN VOLVER
+       ============================================ -->
+  <button class="btn btn-back" routerLink="/">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Volver al menú
+  </button>
+  
+  <!-- ============================================
+       ENCABEZADO DE LA PÁGINA
+       ============================================ -->
+  <div class="header-section">
+    <h2>Gestión de Citas</h2>
+    <p class="subtitle">Administración y seguimiento de solicitudes</p>
+  </div>
 
-  <div *ngIf="loading">Cargando citas...</div>
+  <!-- ============================================
+       ESTADO DE CARGA (spinner)
+       ============================================ -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando citas...</p>
+  </div>
 
-  <div *ngIf="!loading">
+  <!-- ============================================
+       CONTENIDO PRINCIPAL (solo si no está cargando)
+       ============================================ -->
+  <div *ngIf="!loading" class="content-wrapper">
+    
+    <!-- ============================================
+         PESTAÑAS: Pendientes / Contestadas
+         ============================================ -->
     <div class="tabs">
-      <button [class.active]="selectedTab === 'pendientes'" 
-              (click)="selectTab('pendientes')">
-        🟡 Pendientes ({{ pendientes.length }})
+      <!-- Pestaña Pendientes -->
+      <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'pendientes'" 
+        (click)="selectTab('pendientes')">
+        <span class="tab-indicator pending"></span>
+        <span class="tab-label">Pendientes</span>
+        <span class="tab-count">{{ pendientes.length }}</span> <!-- Contador -->
       </button>
-      <button [class.active]="selectedTab === 'contestadas'" 
-              (click)="selectTab('contestadas')">
-        ✅ Contestadas ({{ contestadas.length }})
+      
+      <!-- Pestaña Contestadas -->
+      <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'contestadas'" 
+        (click)="selectTab('contestadas')">
+        <span class="tab-indicator completed"></span>
+        <span class="tab-label">Contestadas</span>
+        <span class="tab-count">{{ contestadas.length }}</span> <!-- Contador -->
       </button>
     </div>
 
-    <!-- PENDIENTES -->
-    <section *ngIf="selectedTab === 'pendientes'">
-      <h3>🟡 Pendientes ({{ pendientes.length }})</h3>
+    <!-- ============================================
+         SECCIÓN: CITAS PENDIENTES
+         ============================================ -->
+    <section *ngIf="selectedTab === 'pendientes'" class="tab-content">
+      
+      <!-- Header de la sección con badge -->
+      <div class="section-header">
+        <h3>
+          <span class="status-badge pending">Pendientes</span>
+          <span class="count-badge">{{ pendientes.length }}</span>
+        </h3>
+      </div>
 
-      <div *ngIf="pendientes.length === 0">No hay citas pendientes.</div>
+      <!-- Estado vacío (no hay pendientes) -->
+      <div *ngIf="pendientes.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+            <!-- Icono de check/carpeta vacía -->
+            <path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="empty-text">No hay citas pendientes</p>
+        <p class="empty-subtext">Las nuevas solicitudes aparecerán aquí</p>
+      </div>
 
-      <table *ngIf="pendientes.length > 0" class="citas-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>DNI</th>
-            <th>Vehículo</th>
-            <th>Fecha / Hora</th>
-            <th>Motivo</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let c of pendientes">
-            <td>{{ c.id }}</td>
-            <td>{{ c.nombre }} {{ c.apellido }}</td>
-            <td>{{ c.dni }}</td>
-            <td>{{ c.marca }} {{ c.modelo }} ({{ c.anio }})</td>
-            <td>{{ c.fecha_hora }}</td>
-            <td>{{ c.motivo }}</td>
-            <td>{{ mapEstado(c.estado) }}</td>
-            <td>
-              <button class="btn-aceptar" (click)="setEstado(c, 'aceptada')">
-                Aceptar
-              </button>
-              <button class="btn-rechazar" (click)="setEstado(c, 'rechazada')">
-                Rechazar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Tabla de pendientes (si hay) -->
+      <div *ngIf="pendientes.length > 0" class="table-container">
+        <table class="citas-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>DNI</th>
+              <th>Vehículo</th>
+              <th>Fecha / Hora</th>
+              <th>Motivo</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Recorre cada cita pendiente y crea una fila -->
+            <tr *ngFor="let c of pendientes" class="table-row">
+              <td class="cell-id">#{{ c.id }}</td>
+              <td class="cell-name">{{ c.nombre }} {{ c.apellido }}</td>
+              <td class="cell-dni">{{ c.dni }}</td>
+              <td class="cell-vehicle">
+                <div class="vehicle-info">
+                  <span class="vehicle-brand">{{ c.marca }} {{ c.modelo }}</span>
+                  <span class="vehicle-year">({{ c.anio }})</span>
+                </div>
+              </td>
+              <td class="cell-datetime">{{ c.fecha_hora }}</td>
+              <td class="cell-motivo">{{ c.motivo }}</td>
+              <td class="cell-status">
+                <span class="status-pill pending">{{ mapEstado(c.estado) }}</span>
+              </td>
+              <td class="cell-actions">
+                <!-- Botón Aceptar -->
+                <button class="btn-action btn-accept" (click)="setEstado(c, 'aceptada')">
+                  <svg width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Aceptar
+                </button>
+                <!-- Botón Rechazar -->
+                <button class="btn-action btn-reject" (click)="setEstado(c, 'rechazada')">
+                  <svg width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Rechazar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <!-- CONTESTADAS -->
-    <section *ngIf="selectedTab === 'contestadas'">
-      <h3>✅ Contestadas ({{ contestadas.length }})</h3>
+    <!-- ============================================
+         SECCIÓN: CITAS CONTESTADAS (historial)
+         ============================================ -->
+    <section *ngIf="selectedTab === 'contestadas'" class="tab-content">
+      
+      <!-- Header de la sección -->
+      <div class="section-header">
+        <h3>
+          <span class="status-badge completed">Contestadas</span>
+          <span class="count-badge">{{ contestadas.length }}</span>
+        </h3>
+      </div>
 
-      <div *ngIf="contestadas.length === 0">No hay citas contestadas.</div>
+      <!-- Estado vacío (no hay contestadas) -->
+      <div *ngIf="contestadas.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+            <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="empty-text">No hay citas contestadas</p>
+        <p class="empty-subtext">Las citas procesadas aparecerán aquí</p>
+      </div>
 
-      <table *ngIf="contestadas.length > 0" class="citas-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>DNI</th>
-            <th>Vehículo</th>
-            <th>Fecha / Hora</th>
-            <th>Motivo</th>
-            <th>Estado</th>
-            <th>Motivo admin</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let c of contestadas">
-            <td>{{ c.id }}</td>
-            <td>{{ c.nombre }} {{ c.apellido }}</td>
-            <td>{{ c.dni }}</td>
-            <td>{{ c.marca }} {{ c.modelo }} ({{ c.anio }})</td>
-            <td>{{ c.fecha_hora }}</td>
-            <td>{{ c.motivo }}</td>
-            <td>{{ mapEstado(c.estado) }}</td>
-            <td>{{ c.admin_message || '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Tabla de contestadas (si hay) -->
+      <div *ngIf="contestadas.length > 0" class="table-container">
+        <table class="citas-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>DNI</th>
+              <th>Vehículo</th>
+              <th>Fecha / Hora</th>
+              <th>Motivo</th>
+              <th>Estado</th>
+              <th>Respuesta Admin</th> <!-- Columna adicional: mensaje del admin -->
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of contestadas" class="table-row">
+              <td class="cell-id">#{{ c.id }}</td>
+              <td class="cell-name">{{ c.nombre }} {{ c.apellido }}</td>
+              <td class="cell-dni">{{ c.dni }}</td>
+              <td class="cell-vehicle">
+                <div class="vehicle-info">
+                  <span class="vehicle-brand">{{ c.marca }} {{ c.modelo }}</span>
+                  <span class="vehicle-year">({{ c.anio }})</span>
+                </div>
+              </td>
+              <td class="cell-datetime">{{ c.fecha_hora }}</td>
+              <td class="cell-motivo">{{ c.motivo }}</td>
+              <td class="cell-status">
+                <!-- Badge de estado con clase dinámica según si es aceptada o rechazada -->
+                <span class="status-pill" [class.accepted]="c.estado === 'aceptada'" [class.rejected]="c.estado === 'rechazada'">
+                  {{ mapEstado(c.estado) }}
+                </span>
+              </td>
+              <!-- Mensaje del admin (o guión si no hay) -->
+              <td class="cell-message">{{ c.admin_message || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </div>
 </div>

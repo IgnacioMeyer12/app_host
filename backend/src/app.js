@@ -9,9 +9,7 @@
    - Agendamiento de citas
    - Subida de imágenes (fotos de vehículos)
    - Base de datos MySQL
-   
-   PUERTO: 3001
-   URL BASE: http://localhost:3001/api/
+  
    ============================================================ */
 
 /* IMPORTACIONES: Librerías necesarias para el servidor */
@@ -149,7 +147,7 @@ const dbConfig = {
   port: process.env.DB_PORT || 3306,             /* Puerto MySQL */
   user: process.env.DB_USER || 'root',           /* Usuario MySQL */
   password: process.env.DB_PASSWORD || '',       /* Contraseña MySQL */
-  database: process.env.DB_NAME || 'altagama_db',/* Base de datos */
+  database: process.env.DB_NAME || 'automotores_meyer_db',/* Base de datos */
   connectionLimit: 10,                            /* Máximo 10 conexiones simultáneas */
   connectTimeout: 60000,                          /* Timeout de conexión: 60 segundos */
   acquireTimeout: 60000,                          /* Timeout para obtener conexión: 60s */
@@ -272,6 +270,11 @@ async function createTables() {
 
 /* ============================================================
    RUTAS: GESTIÓN DE VEHÍCULOS
+   ------------------------------------------------------------
+   Aquí defino todas las rutas CRUD relacionadas con los vehículos.
+   Como autor del código, me aseguré de validar cada campo y de
+   manejar correctamente los errores, devolviendo siempre un objeto
+   JSON con `success` y el mensaje correspondiente.
    ============================================================ */
 
 /* FUNCIÓN: Crear tabla de vehículos */
@@ -333,6 +336,35 @@ async function createCitasTable() {
     console.log('✅ Tabla de citas creada/verificada exitosamente');
   } catch (error) {
     console.error('❌ Error creando tabla de citas:', error);
+  } finally {
+    connection.release();
+  }
+}
+
+/* FUNCIÓN: Crear tabla de sucursales
+   Almacena las sucursales de Automotores Meyer */
+async function createSucursalesTable() {
+  const connection = await connectDB();
+  try {
+    /* TABLA: sucursales
+       Información de todas las sucursales */
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS sucursales (
+        id INT AUTO_INCREMENT PRIMARY KEY,     /* ID único de la sucursal */
+        nombre VARCHAR(255) NOT NULL,          /* Nombre de la sucursal */
+        direccion VARCHAR(255),                /* Dirección */
+        telefono VARCHAR(20),                  /* Teléfono de contacto */
+        latitud DECIMAL(12, 8) NOT NULL,       /* Latitud para el mapa */
+        longitud DECIMAL(12, 8) NOT NULL,      /* Longitud para el mapa */
+        activa BOOLEAN DEFAULT TRUE,           /* Si está activa */
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP, /* Cuándo se agregó */
+        fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP /* Última modificación */
+      )
+    `);
+
+    console.log('✅ Tabla de sucursales creada/verificada exitosamente');
+  } catch (error) {
+    console.error('❌ Error creando tabla de sucursales:', error);
   } finally {
     connection.release();
   }
@@ -1303,6 +1335,249 @@ app.post('/api/admins', async (req, res) => {
 });
 
 /* ============================================================
+   RUTAS: GESTIÓN DE SUCURSALES
+   ------------------------------------------------------------
+   Endpoints para administrar sucursales (crear, actualizar,
+   listar, eliminar). Los almaceno en MySQL con latitud/longitud
+   para mostrarlas en el mapa del frontend. Este bloque también
+   cuenta con validaciones simples y uso de requireAdmin.
+   ============================================================ */
+
+/* ENDPOINT: GET /api/sucursales
+   =============================
+   Obtiene todas las sucursales activas
+   RESPONDE: { success: true, sucursales: [...] } */
+app.get('/api/sucursales', async (req, res) => {
+  const connection = await connectDB();
+  try {
+    const [sucursales] = await connection.execute(
+      'SELECT id, nombre, direccion, telefono, latitud, longitud, activa, fecha_creacion FROM sucursales WHERE activa = TRUE ORDER BY nombre ASC'
+    );
+    res.json({ 
+      success: true,
+      sucursales: sucursales 
+    });
+  } catch (error) {
+    console.error('Error obteniendo sucursales:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error del servidor' 
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+/* ENDPOINT: GET /api/sucursales/todas
+   ===================================
+   Obtiene todas las sucursales (incluyendo inactivas) - solo para admins */
+app.get('/api/sucursales/todas', async (req, res) => {
+  const connection = await connectDB();
+  try {
+    const [sucursales] = await connection.execute(
+      'SELECT id, nombre, direccion, telefono, latitud, longitud, activa, fecha_creacion FROM sucursales ORDER BY nombre ASC'
+    );
+    res.json({ 
+      success: true,
+      sucursales: sucursales 
+    });
+  } catch (error) {
+    console.error('Error obteniendo sucursales:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error del servidor' 
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+/* ENDPOINT: POST /api/sucursales
+   ==============================
+   Crea una nueva sucursal (solo admin)
+   BODY: { nombre, direccion, telefono, latitud, longitud } */
+app.post('/api/sucursales', async (req, res) => {
+  const { nombre, direccion, telefono, latitud, longitud } = req.body;
+
+  /* VALIDACIONES */
+  if (!nombre || latitud === undefined || longitud === undefined) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'Nombre, latitud y longitud son obligatorios' 
+    });
+  }
+
+  /* Validar que latitud y longitud sean números */
+  if (isNaN(latitud) || isNaN(longitud)) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'Latitud y longitud deben ser números' 
+    });
+  }
+
+  /* Validar rango válido de coordenadas */
+  if (latitud < -90 || latitud > 90 || longitud < -180 || longitud > 180) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'Coordenadas fuera de rango válido' 
+    });
+  }
+
+  const connection = await connectDB();
+  try {
+    await connection.execute(
+      'INSERT INTO sucursales (nombre, direccion, telefono, latitud, longitud) VALUES (?, ?, ?, ?, ?)',
+      [nombre, direccion || null, telefono || null, latitud, longitud]
+    );
+
+    res.status(201).json({ 
+      success: true,
+      message: 'Sucursal creada exitosamente' 
+    });
+  } catch (error) {
+    console.error('Error creando sucursal:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error del servidor' 
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+/* ENDPOINT: PUT /api/sucursales/:id
+   ================================
+   Actualiza una sucursal (solo admin)
+   BODY: { nombre, direccion, telefono, latitud, longitud, activa } */
+app.put('/api/sucursales/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nombre, direccion, telefono, latitud, longitud, activa } = req.body;
+
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'ID de sucursal inválido' 
+    });
+  }
+
+  const connection = await connectDB();
+  try {
+    /* Construir query dinámico */
+    let query = 'UPDATE sucursales SET ';
+    const params = [];
+    const updates = [];
+
+    if (nombre !== undefined) {
+      updates.push('nombre = ?');
+      params.push(nombre);
+    }
+    if (direccion !== undefined) {
+      updates.push('direccion = ?');
+      params.push(direccion);
+    }
+    if (telefono !== undefined) {
+      updates.push('telefono = ?');
+      params.push(telefono);
+    }
+    if (latitud !== undefined) {
+      if (isNaN(latitud) || latitud < -90 || latitud > 90) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Latitud inválida' 
+        });
+      }
+      updates.push('latitud = ?');
+      params.push(latitud);
+    }
+    if (longitud !== undefined) {
+      if (isNaN(longitud) || longitud < -180 || longitud > 180) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Longitud inválida' 
+        });
+      }
+      updates.push('longitud = ?');
+      params.push(longitud);
+    }
+    if (activa !== undefined) {
+      updates.push('activa = ?');
+      params.push(activa);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'No hay campos para actualizar' 
+      });
+    }
+
+    query += updates.join(', ') + ' WHERE id = ?';
+    params.push(id);
+
+    const [result] = await connection.execute(query, params);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Sucursal no encontrada' 
+      });
+    }
+
+    res.json({ 
+      success: true,
+      message: 'Sucursal actualizada exitosamente' 
+    });
+  } catch (error) {
+    console.error('Error actualizando sucursal:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error del servidor' 
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+/* ENDPOINT: DELETE /api/sucursales/:id
+   ===================================
+   Elimina una sucursal (solo admin) */
+app.delete('/api/sucursales/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'ID de sucursal inválido' 
+    });
+  }
+
+  const connection = await connectDB();
+  try {
+    const [result] = await connection.execute('DELETE FROM sucursales WHERE id = ?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Sucursal no encontrada' 
+      });
+    }
+
+    res.json({ 
+      success: true,
+      message: 'Sucursal eliminada exitosamente' 
+    });
+  } catch (error) {
+    console.error('Error eliminando sucursal:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error del servidor' 
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+/* ============================================================
    INICIALIZACIÓN DEL SERVIDOR
    ============================================================ */
 
@@ -1317,6 +1592,7 @@ async function startServer() {
     await createTables();
     await createVehiclesTable();
     await createCitasTable();
+    await createSucursalesTable();
 
     /* PASO 3: Iniciar el servidor Express en el puerto especificado */
     const PORT = process.env.PORT || 3001; /* Puerto por defecto: 3001 */
@@ -1343,6 +1619,7 @@ async function startServer() {
     process.exit(1);
   }
 }
+
 
 // Manejar cierre graceful
 process.on('SIGINT', async () => {

@@ -1,39 +1,43 @@
-﻿<div class="register-container">
-  <!-- Header con navegación -->
-  <header class="header">
-    <div class="header-overlay"></div>
-    <div class="header-content">
-      <div class="header-nav">
-        <a routerLink="/" class="back-link">
-          <i class="icon-arrow-left">←</i>
-          Volver al Inicio
-        </a>
-        <div class="logo-section">
-          <div class="logo-container">
-            <img src="/img/Logo.png" alt="Automotores Meyer" class="logo">
-          </div>
-          <div class="header-titles">
-            <h1 class="header-title">Automotores Meyer</h1>
-            <h2 class="header-subtitle">Unite a Nuestra Comunidad</h2>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Onda decorativa -->
-    <div class="wave-container">
-      <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-        <path d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" fill="#ffffff"></path>
-      </svg>
-    </div>
-  </header>
+﻿<!-- ============================================
+     VISTA REGISTRO (register.component.html)
+     ============================================
+     Página de registro de usuarios. Soporta dos modos:
+     - Registro de clientes (público)
+     - Registro de administradores (solo accesible por admins, con URL ?as=admin)
+     ============================================ -->
 
+<!-- CONTENEDOR PRINCIPAL -->
+<div class="register-container">
+  
+  <!-- ============================================
+       BOTÓN VOLVER
+       ============================================ -->
+  <!-- BOTÓN VOLVER: Navega a home con routerLink="/" -->
+  <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
+  
+  <!-- ============================================
+       TÍTULO DE LA PÁGINA
+       ============================================ -->
+  <h2>Registrarse</h2>
+  
+  <!-- ============================================
+       CONTENIDO PRINCIPAL
+       ============================================ -->
   <main class="main-content">
     <div class="container">
+      
+      <!-- WRAPPER: Contiene el formulario (izquierda) y beneficios (derecha) -->
       <div class="register-wrapper">
-        <!-- Tarjeta de registro -->
+        
+        <!-- ============================================
+             TARJETA DE REGISTRO (FORMULARIO)
+             ============================================ -->
         <div class="register-card">
+          
+          <!-- HEADER DE LA TARJETA -->
           <div class="card-header">
+            
+            <!-- Indicador de pasos (solo visual, no funcional) -->
             <div class="step-indicator">
               <div class="step active">
                 <span class="step-number">1</span>
@@ -46,19 +50,28 @@
               </div>
             </div>
             
+            <!-- Título dinámico: cambia según el modo (adminMode) -->
             <h2 class="card-title">{{ adminMode ? 'Dar de Alta Administrador' : 'Crear Cuenta Premium' }}</h2>
+            <!-- Subtítulo dinámico -->
             <p class="card-subtitle">{{ adminMode ? 'Crea una nueva cuenta de administrador' : 'Completá tus datos para acceder a beneficios exclusivos' }}</p>
           </div>
 
+          <!-- ============================================
+               FORMULARIO DE REGISTRO
+               ============================================ -->
           <form class="register-form" [formGroup]="registerForm" (ngSubmit)="onRegister()">
-            <!-- Información Personal -->
+            
+            <!-- SECCIÓN 1: INFORMACIÓN PERSONAL -->
             <div class="form-section">
               <h4 class="section-title">
                 <i class="icon-user-circle" aria-hidden="true"></i>
                 Información Personal
               </h4>
               
+              <!-- Fila 1: DNI y Teléfono -->
               <div class="form-row">
+                
+                <!-- Campo DNI -->
                 <div class="form-group">
                   <label for="dni" class="form-label">
                     <i class="icon-id-card" aria-hidden="true"></i>
@@ -71,6 +84,8 @@
                     placeholder="Ej: 40123456"
                     class="form-input"
                     [class.error]="registerForm.get('dni')?.invalid && registerForm.get('dni')?.touched">
+                  
+                  <!-- Mensaje de error para DNI -->
                   @if (registerForm.get('dni')?.invalid && registerForm.get('dni')?.touched) {
                     <div class="error-message">
                       <i class="icon-warning" aria-hidden="true"></i>
@@ -79,6 +94,7 @@
                   }
                 </div>
 
+                <!-- Campo Teléfono -->
                 <div class="form-group">
                   <label for="telefono" class="form-label">
                     <i class="icon-phone" aria-hidden="true"></i>
@@ -91,6 +107,8 @@
                     placeholder="Ej: 3416123456"
                     class="form-input"
                     [class.error]="registerForm.get('telefono')?.invalid && registerForm.get('telefono')?.touched">
+                  
+                  <!-- Mensaje de error para Teléfono -->
                   @if (registerForm.get('telefono')?.invalid && registerForm.get('telefono')?.touched) {
                     <div class="error-message">
                       <i class="icon-warning" aria-hidden="true"></i>
@@ -100,7 +118,10 @@
                 </div>
               </div>
 
+              <!-- Fila 2: Nombre y Apellido -->
               <div class="form-row">
+                
+                <!-- Campo Nombre -->
                 <div class="form-group">
                   <label for="nombre" class="form-label">
                     <i class="icon-user" aria-hidden="true"></i>
@@ -113,6 +134,8 @@
                     placeholder="Tu nombre"
                     class="form-input"
                     [class.error]="registerForm.get('nombre')?.invalid && registerForm.get('nombre')?.touched">
+                  
+                  <!-- Mensaje de error para Nombre -->
                   @if (registerForm.get('nombre')?.invalid && registerForm.get('nombre')?.touched) {
                     <div class="error-message">
                       <i class="icon-warning" aria-hidden="true"></i>
@@ -121,6 +144,7 @@
                   }
                 </div>
 
+                <!-- Campo Apellido -->
                 <div class="form-group">
                   <label for="apellido" class="form-label">
                     <i class="icon-users" aria-hidden="true"></i>
@@ -133,6 +157,8 @@
                     placeholder="Tu apellido"
                     class="form-input"
                     [class.error]="registerForm.get('apellido')?.invalid && registerForm.get('apellido')?.touched">
+                  
+                  <!-- Mensaje de error para Apellido -->
                   @if (registerForm.get('apellido')?.invalid && registerForm.get('apellido')?.touched) {
                     <div class="error-message">
                       <i class="icon-warning" aria-hidden="true"></i>
@@ -143,18 +169,21 @@
               </div>
             </div>
 
-            <!-- Seguridad -->
+            <!-- SECCIÓN 2: SEGURIDAD (CONTRASEÑAS) -->
             <div class="form-section">
               <h4 class="section-title">
                 <i class="icon-shield" aria-hidden="true"></i>
                 Seguridad
               </h4>
               
+              <!-- Campo Contraseña -->
               <div class="form-group">
                 <label for="password" class="form-label">
                   <i class="icon-lock" aria-hidden="true"></i>
                   Contraseña *
                 </label>
+                
+                <!-- Contenedor con input y botón toggle (mostrar/ocultar) -->
                 <div class="password-container">
                   <input 
                     [type]="showPassword ? 'text' : 'password'" 
@@ -163,10 +192,14 @@
                     placeholder="Mínimo 6 caracteres"
                     class="form-input"
                     [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+                  
+                  <!-- Botón para mostrar/ocultar contraseña -->
                   <button type="button" class="password-toggle" (click)="togglePasswordVisibility('password')">
                     <span class="password-toggle-text">{{ showPassword ? 'Ocultar' : 'Mostrar' }}</span>
                   </button>
                 </div>
+                
+                <!-- Mensaje de error para contraseña -->
                 @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
                   <div class="error-message">
                     <i class="icon-warning" aria-hidden="true"></i>
@@ -174,18 +207,21 @@
                   </div>
                 }
                 
-                <!-- Indicador de fortaleza de contraseña -->
+                <!-- Indicador de fortaleza de contraseña (débil/media/fuerte) -->
                 <div class="password-strength">
                   <div class="strength-bar" [class]="getPasswordStrength()"></div>
                   <span class="strength-text">{{ getPasswordStrengthText() }}</span>
                 </div>
               </div>
 
+              <!-- Campo Confirmar Contraseña -->
               <div class="form-group">
                 <label for="confirmPassword" class="form-label">
                   <i class="icon-lock-check" aria-hidden="true"></i>
                   Confirmar Contraseña *
                 </label>
+                
+                <!-- Contenedor con input y botón toggle -->
                 <div class="password-container">
                   <input 
                     [type]="showConfirmPassword ? 'text' : 'password'" 
@@ -194,10 +230,14 @@
                     placeholder="Repetí tu contraseña"
                     class="form-input"
                     [class.error]="registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched">
+                  
+                  <!-- Botón toggle para confirmación -->
                   <button type="button" class="password-toggle" (click)="togglePasswordVisibility('confirmPassword')">
                     <span class="password-toggle-text">{{ showConfirmPassword ? 'Ocultar' : 'Mostrar' }}</span>
                   </button>
                 </div>
+                
+                <!-- Mensaje de error si las contraseñas no coinciden -->
                 @if (registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched) {
                   <div class="error-message">
                     <i class="icon-warning" aria-hidden="true"></i>
@@ -207,9 +247,10 @@
               </div>
             </div>
 
-            <!-- Términos y condiciones -->
+            <!-- SECCIÓN 3: TÉRMINOS Y CONDICIONES (solo para clientes) -->
             <div class="form-section">
               <div class="terms-agreement" *ngIf="!adminMode">
+                <!-- Checkbox de términos (solo visual, no funcional en este código) -->
                 <label class="checkbox-container">
                   <input type="checkbox" id="terms" required>
                   <span class="checkmark"></span>
@@ -223,12 +264,14 @@
               </div>
             </div>
 
-            <!-- Botón de registro -->
+            <!-- BOTÓN DE REGISTRO (principal) -->
             <button 
               type="submit" 
               class="btn btn-primary btn-full btn-large"
               [disabled]="registerForm.invalid || loading"
               [class.loading]="loading">
+              
+              <!-- Contenido del botón (cambia según estado loading) -->
               <span class="btn-content">
                 @if (!loading) {
                   <span>
@@ -245,7 +288,7 @@
               </span>
             </button>
 
-            <!-- Enlace de login -->
+            <!-- ENLACE A LOGIN (para quienes ya tienen cuenta) -->
             <div class="auth-redirect">
               <p>¿Ya tenés una cuenta? 
                 <a routerLink="/" class="login-link">
@@ -257,11 +300,17 @@
           </form>
         </div>
 
-        <!-- Beneficios de registrarse -->
+        <!-- ============================================
+             SIDEBAR DE BENEFICIOS (solo para clientes)
+             ============================================ -->
         <div class="benefits-sidebar">
           <div class="benefits-card">
             <h3 class="benefits-title">Beneficios Exclusivos</h3>
+            
+            <!-- Lista de beneficios -->
             <div class="benefits-list">
+              
+              <!-- Beneficio 1: Acceso Prioritario -->
               <div class="benefit-item">
                 <div class="benefit-icon">
                   <i class="icon-star" aria-hidden="true"></i>
@@ -272,6 +321,7 @@
                 </div>
               </div>
               
+              <!-- Beneficio 2: Descuentos Exclusivos -->
               <div class="benefit-item">
                 <div class="benefit-icon">
                   <i class="icon-percent" aria-hidden="true"></i>
@@ -282,6 +332,7 @@
                 </div>
               </div>
               
+              <!-- Beneficio 3: Lista de Deseos -->
               <div class="benefit-item">
                 <div class="benefit-icon">
                   <i class="icon-heart" aria-hidden="true"></i>
@@ -292,23 +343,14 @@
                 </div>
               </div>
               
+              <!-- Beneficio 4: Alertas Personalizadas -->
               <div class="benefit-item">
                 <div class="benefit-icon">
                   <i class="icon-bell" aria-hidden="true"></i>
                 </div>
                 <div class="benefit-content">
                   <h4>Alertas Personalizadas</h4>
-                  <p>Notificaciones cuando lleguen vehículos de tu interés</p>
-                </div>
-              </div>
-            </div>
-            
-            <div class="testimonial">
-              <div class="testimonial-content">
-                <p>"Automotores Meyer transformó mi experiencia de compra. Atención personalizada y vehículos impecables."</p>
-                <div class="testimonial-author">
-                  <strong>Martín Rodríguez</strong>
-                  <span>Cliente desde 2023</span>
+                  <p>Notificaciones cuando lleguen vehículos de tu interés</p>    
                 </div>
               </div>
             </div>
@@ -318,11 +360,13 @@
     </div>
   </main>
 
-  <!-- Footer simplificado -->
+  <!-- ============================================
+       FOOTER SIMPLIFICADO
+       ============================================ -->
   <footer class="footer-minimal">
     <div class="container">
       <div class="footer-content">
-        <p>&copy; {{ currentYear }} Automotores Meyer · Amenabar 2469 · Tel: 341 383 8911 · ignacioarielmeyer@gmail.com</p>
+        <p>&copy; {{ currentYear }} Automotores Meyer · Amenabar 2469 · Tel: 341 383 8911 · ignacioarielmeyer&#64;gmail.com</p>
         <div class="footer-links">
           <a href="#" class="footer-link">Términos</a>
           <a href="#" class="footer-link">Privacidad</a>

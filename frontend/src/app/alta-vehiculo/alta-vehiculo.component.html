@@ -1,13 +1,40 @@
+<!-- ============================================
+     VISTA ALTA VEHÍCULO (alta-vehiculo.component.html)
+     ============================================
+     Formulario para que administradores den de alta nuevos vehículos.
+     Incluye:
+     - Campos: marca, modelo, año, precio, km, color, fotos, descripción
+     - Checkbox 0km que deshabilita km y requiere stock
+     - Selector de color con paleta visual
+     - Subida de imágenes (drag & drop, selección de archivos, pegado)
+     - Vista previa antes de registrar
+     - Botones Verificar, Limpiar, Registrar, Editar
+     ============================================ -->
+
+<!-- CONTENEDOR PRINCIPAL -->
 <div class="alta-vehiculo-container">
+  
+  <!-- TARJETA DEL FORMULARIO -->
   <div class="alta-vehiculo-card">
+    
+    <!-- ============================================
+         BOTÓN VOLVER
+         ============================================ -->
     <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
+    
+    <!-- ============================================
+         TÍTULO DE LA PÁGINA
+         ============================================ -->
     <h2>Alta de Vehículo</h2>
     
+    <!-- ============================================
+         FORMULARIO PRINCIPAL
+         ============================================ -->
     <form [formGroup]="vehiculoForm" (ngSubmit)="onSubmit()" class="alta-vehiculo-form">
       
-
-
-      <!-- Marca -->
+      <!-- ============================================
+           CAMPO: MARCA
+           ============================================ -->
       <div class="form-group">
         <label for="marca">Marca *</label>
         <input 
@@ -21,26 +48,42 @@
         </div>
       </div>
 
-      <!-- 0KM y Stock -->
+      <!-- ============================================
+           SECCIÓN: 0KM Y STOCK
+           ============================================ -->
       <div class="form-group inline">
+        <!-- Checkbox 0km -->
         <label>
-          <input type="checkbox" [checked]="vehiculoForm.get('es0km')?.value" (change)="toggle0km($event.target.checked)" /> 0 km
+          <input type="checkbox" [checked]="vehiculoForm.get('es0km')?.value" (change)="toggle0km($event)" /> 0 km
         </label>
+        
+        <!-- Campo stock (solo visible si es 0km) -->
         <div *ngIf="vehiculoForm.get('es0km')?.value" class="stock-field">
           <label for="stock">Stock (cantidad)</label>
           <input type="number" id="stock" formControlName="stock" min="1" />
         </div>
       </div>
 
-      <!-- Color -->
+      <!-- ============================================
+           SECCIÓN: COLOR (paleta)
+           ============================================ -->
       <div class="form-group">
         <label>Color</label>
         <div class="color-picker">
-          <button type="button" class="swatch" *ngFor="let c of colorOptions" [style.background]="c" (click)="selectColor(c)" [class.active]="vehiculoForm.get('color')?.value === c"></button>
+          <!-- Muestra un botón por cada color en colorOptions -->
+          <button type="button" 
+                  class="swatch" 
+                  *ngFor="let c of colorOptions" 
+                  [style.background]="c" 
+                  (click)="selectColor(c)" 
+                  [class.active]="vehiculoForm.get('color')?.value === c">
+          </button>
         </div>
       </div>
 
-      <!-- Modelo -->
+      <!-- ============================================
+           CAMPO: MODELO
+           ============================================ -->
       <div class="form-group">
         <label for="modelo">Modelo *</label>
         <input 
@@ -54,7 +97,9 @@
         </div>
       </div>
 
-      <!-- Año -->
+      <!-- ============================================
+           CAMPO: AÑO
+           ============================================ -->
       <div class="form-group">
         <label for="anio">Año *</label>
         <input 
@@ -75,7 +120,9 @@
         </div>
       </div>
 
-      <!-- Precio -->
+      <!-- ============================================
+           CAMPO: PRECIO
+           ============================================ -->
       <div class="form-group">
         <label for="precio">Precio (€) *</label>
         <input 
@@ -96,7 +143,9 @@
         </div>
       </div>
 
-      <!-- Kilómetros -->
+      <!-- ============================================
+           CAMPO: KILÓMETROS
+           ============================================ -->
       <div class="form-group">
         <label for="km">Kilómetros *</label>
         <input 
@@ -116,11 +165,13 @@
         </div>
       </div>
 
-      <!-- Fotos -->
+      <!-- ============================================
+           SECCIÓN: FOTOS
+           ============================================ -->
       <div class="form-group">
         <label>Fotos</label>
 
-        <!-- Drag & drop / file upload -->
+        <!-- ZONA DE DROP / UPLOAD -->
         <div class="dropzone" (drop)="onDrop($event)" (dragover)="onDragOver($event)" (paste)="onPaste($event)">
           <div class="dropzone-inner">
             <p>Arrastra tus imágenes aquí o haz click para seleccionar (.jpg, .png)</p>
@@ -129,6 +180,7 @@
           </div>
         </div>
 
+        <!-- LISTA DE IMÁGENES SUBIDAS -->
         <div class="image-list" *ngIf="imageUrls && imageUrls.length">
           <div class="thumb" *ngFor="let url of imageUrls; let i = index">
             <img [src]="url" [alt]="'Foto ' + (i + 1)" />
@@ -139,11 +191,14 @@
           </div>
         </div>
 
+        <!-- INFORMACIÓN DE ESTADO -->
         <small *ngIf="!uploading">Las imágenes se suben al servidor y se asociarán al vehículo</small>
         <small *ngIf="uploading">Subiendo imágenes...</small>
       </div>
 
-      <!-- Descripción -->
+      <!-- ============================================
+           CAMPO: DESCRIPCIÓN
+           ============================================ -->
       <div class="form-group">
         <label for="descripcion">Descripción</label>
         <textarea 
@@ -153,8 +208,11 @@
           rows="4"></textarea>
       </div>
 
-      <!-- Botones -->
+      <!-- ============================================
+           BOTONES DE ACCIÓN (Verificar / Limpiar)
+           ============================================ -->
       <div class="form-actions">
+        <!-- Botón Verificar -->
         <button 
           type="button" 
           class="btn-primary"
@@ -164,6 +222,7 @@
           <span *ngIf="!loading">Verificar</span>
         </button>
         
+        <!-- Botón Limpiar -->
         <button 
           type="button" 
           class="btn-secondary"
@@ -174,21 +233,30 @@
       </div>
     </form>
 
-    <!-- Preview antes de registrar -->
+    <!-- ============================================
+         SECCIÓN DE PREVIEW (después de Verificar)
+         ============================================ -->
     <div *ngIf="isVerified && previewVehicle" id="preview" class="preview-vehicle">
       <h3>Verificar datos</h3>
+      
+      <!-- Grid de preview: imágenes a la izquierda, info a la derecha -->
       <div class="vehicle-grid">
+        
+        <!-- Columna de imágenes -->
         <div class="vehicle-images">
+          <!-- Si hay fotos, las muestra -->
           <ng-container *ngIf="previewVehicle.fotos && previewVehicle.fotos.length; else noPreviewPhotos">
             <div class="thumb" *ngFor="let f of previewVehicle.fotos">
               <img [src]="f" [alt]="previewVehicle.marca + ' ' + previewVehicle.modelo" />
             </div>
           </ng-container>
+          <!-- Si no hay fotos, muestra placeholder -->
           <ng-template #noPreviewPhotos>
             <div class="no-photos">No se agregaron imágenes</div>
           </ng-template>
         </div>
 
+        <!-- Columna de información -->
         <div class="vehicle-info">
           <p><strong>Marca:</strong> {{ previewVehicle.marca }}</p>
           <p><strong>Modelo:</strong> {{ previewVehicle.modelo }}</p>
@@ -199,13 +267,16 @@
         </div>
       </div>
 
+      <!-- Botones de acción en preview -->
       <div class="created-actions">
         <button class="btn-primary" (click)="register()" [disabled]="loading">Registrar</button>
         <button class="btn-secondary" (click)="editar()" [disabled]="loading">Editar</button>
       </div>
     </div>
 
-    <!-- Mensajes de éxito/error -->
+    <!-- ============================================
+         MENSAJES DE ÉXITO O ERROR
+         ============================================ -->
     <div *ngIf="message" 
          [class]="messageType === 'success' ? 'message success' : 'message error'">
       {{ message }}

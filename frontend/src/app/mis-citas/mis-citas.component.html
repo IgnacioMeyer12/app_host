@@ -1,32 +1,61 @@
+<!-- ============================================
+     VISTA MIS CITAS (mis-citas.component.html)
+     ============================================
+     Muestra la interfaz donde el usuario puede ver todas sus citas agendadas.
+     ============================================ -->
+
+<!-- Contenedor principal de la página -->
 <div class="mis-citas-container">
+  
+  <!-- Botón para volver al menú principal (usa routerLink para navegar sin recargar) -->
   <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
+  
+  <!-- Título de la página -->
   <h2>Mis Citas</h2>
 
+  <!-- Mensaje mientras se cargan los datos desde el servidor -->
   <div *ngIf="loading">Cargando...</div>
+  
+  <!-- Mensaje de error si algo salió mal -->
   <div *ngIf="message" class="message error">{{ message }}</div>
 
+  <!-- 
+    TABLA DE CITAS - Solo se muestra si:
+    1. No está cargando (!loading)
+    2. Hay citas para mostrar (citas y citas.length)
+  -->
   <table *ngIf="!loading && citas && citas.length" class="citas-table">
+    <!-- Encabezados de la tabla -->
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Vehículo</th>
-        <th>Fecha / Hora</th>
-        <th>Motivo</th>
-        <th>Estado</th>
-        <th>Mensaje admin</th>
+        <th>ID</th>                    <!-- Número identificador de la cita -->
+        <th>Vehículo</th>               <!-- Marca, modelo y año del vehículo -->
+        <th>Fecha / Hora</th>           <!-- Cuándo está agendada la cita -->
+        <th>Motivo</th>                 <!-- Razón de la cita (service, reparación, etc) -->
+        <th>Estado</th>                  <!-- Pendiente, aceptada o rechazada -->
+        <th>Mensaje admin</th>           <!-- Comentario del administrador (si hay) -->
       </tr>
     </thead>
+    
+    <!-- Cuerpo de la tabla: recorre cada cita y crea una fila por cada una -->
     <tbody>
-      <tr *ngFor="let c of citas">
-        <td>{{ c.id }}</td>
-        <td>{{ c.marca }} {{ c.modelo }} ({{ c.anio }})</td>
-        <td>{{ c.fecha_hora }}</td>
-        <td>{{ c.motivo }}</td>
-        <td>{{ mapEstado(c.estado) }}</td>
-        <td>{{ c.admin_message || '-' }}</td>
+      <tr *ngFor="let c of citas">       <!-- *ngFor: repite esta fila por cada cita -->
+        <td>{{ c.id }}</td>               <!-- Muestra el ID de la cita -->
+        <td>{{ c.marca }} {{ c.modelo }} ({{ c.anio }})</td> <!-- Vehículo completo -->
+        <td>{{ c.fecha_hora }}</td>       <!-- Fecha y hora de la cita -->
+        <td>{{ c.motivo }}</td>           <!-- Motivo de la cita -->
+        <td>{{ mapEstado(c.estado) }}</td> <!-- Estado traducido (usa la función del .ts) -->
+        <td>{{ c.admin_message || '-' }}</td> <!-- Mensaje del admin o guión si no hay -->
       </tr>
     </tbody>
   </table>
 
-  <div *ngIf="!loading && (!citas || citas.length === 0)">No tienes citas programadas.</div>
-</div>
+  <!-- 
+    Mensaje cuando no hay citas:
+    Se muestra si no está cargando Y (no hay citas O el array está vacío)
+  -->
+  <div *ngIf="!loading && (!citas || citas.length === 0)">
+    No tienes citas programadas.
+  </div>
+  
+</div> 

@@ -1,30 +1,114 @@
+<!-- ============================================
+     VISTA CATÁLOGO (catalogo.component.html)
+     ============================================
+     ¿Qué hace este HTML?
+     Muestra el catálogo de vehículos disponibles en una cuadrícula de tarjetas.
+     Cada tarjeta muestra: foto, marca, modelo, año, kilometraje, stock, precio y color.
+     Incluye botones para ver detalles y agendar cita (solo si hay stock).
+     ============================================ -->
+
+<!-- CONTENEDOR PRINCIPAL DEL CATÁLOGO -->
 <div class="catalogo-container">
+  
+  <!-- ============================================
+       BOTÓN VOLVER
+       ============================================ -->
+  <!-- BOTÓN VOLVER: Navega a home con routerLink="/" -->
   <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
+  
+  <!-- ============================================
+       TÍTULO DE LA PÁGINA
+       ============================================ -->
+  <!-- TÍTULO DE LA PÁGINA -->
   <h2>Catálogo</h2>
 
+  <!-- ============================================
+       INDICADOR DE CARGA
+       ============================================ -->
+  <!-- INDICADOR DE CARGA: Se muestra mientras loading = true (cargando vehículos del backend) -->
   <div *ngIf="loading" class="loading">Cargando vehículos...</div>
+  
+  <!-- ============================================
+       MENSAJE DE ERROR
+       ============================================ -->
+  <!-- MENSAJE DE ERROR: Se muestra si hay un error en la carga -->
   <div *ngIf="error" class="message error">{{ error }}</div>
 
+  <!-- ============================================
+       MENSAJE DE CATÁLOGO VACÍO
+       ============================================ -->
+  <!-- MENSAJE DE CATÁLOGO VACÍO: 
+       Se muestra si no está cargando, no hay error, pero el array vehicles está vacío -->
   <div *ngIf="!loading && vehicles && vehicles.length === 0" class="no-items">
     No hay vehículos disponibles en el catálogo.
   </div>
 
+  <!-- ============================================
+       CUADRÍCULA DE VEHÍCULOS
+       ============================================ -->
+  <!-- CUADRÍCULA DE VEHÍCULOS: 
+       Se muestra si no está cargando, hay vehículos y el array tiene elementos -->
   <div class="grid" *ngIf="!loading && vehicles && vehicles.length">
+    
+    <!-- TARJETA DE VEHÍCULO: 
+         *ngFor = directiva que repite esta tarjeta por cada vehículo en el array vehicles
+         let v = variable local que representa cada vehículo -->
     <div class="card" *ngFor="let v of vehicles">
+      
+      <!-- ============================================
+           SECCIÓN DE IMAGEN
+           ============================================ -->
       <div class="image">
-        <img *ngIf="v.fotos && v.fotos.length" [src]="v.fotos[0]" [alt]="v.marca + ' ' + v.modelo" />
+        <!-- Si el vehículo tiene fotos (array fotos con elementos), muestra la primera foto -->
+        <img *ngIf="v.fotos && v.fotos.length" 
+             [src]="v.fotos[0]" 
+             [alt]="v.marca + ' ' + v.modelo" />
+        
+        <!-- Si NO tiene fotos, muestra un placeholder "No hay foto" -->
         <div *ngIf="!v.fotos || !v.fotos.length" class="no-photo">No hay foto</div>
       </div>
 
+      <!-- ============================================
+           SECCIÓN DE INFORMACIÓN DEL VEHÍCULO
+           ============================================ -->
       <div class="info">
+        
+        <!-- Título: Marca y Modelo -->
         <h3>{{ v.marca }} {{ v.modelo }}</h3>
+        
+        <!-- Línea de detalles: Año, Kilometraje, Stock -->
         <p class="muted">Año: {{ v.anio }} · Km: {{ v.km }} · Stock: {{ v.stock || 0 }}</p>
+        
+        <!-- Precio formateado (llama a la función formatCurrency del .ts) -->
         <p class="price">{{ formatCurrency(v.precio) }}</p>
+        
+        <!-- ============================================
+             SECCIÓN DE META DATOS Y ACCIONES
+             ============================================ -->
         <div class="meta">
+          
+          <!-- Muestra una pequeña muestra del color del vehículo 
+               [style.background] = binding de estilo: asigna el color de fondo dinámicamente
+               title="Color" = tooltip al pasar el mouse -->
           <span class="color-swatch" [style.background]="v.color || '#ccc'" title="Color"></span>
+          
+          <!-- Contenedor de botones de acción -->
           <div class="meta-actions">
+            
+            <!-- BOTÓN 1: VER DETALLES
+                 (click)="viewDetails(v)" = cuando hace click, ejecuta viewDetails() pasando el vehículo -->
             <button type="button" class="btn-primary" (click)="viewDetails(v)">Ver detalles</button>
-            <button type="button" class="btn-secondary" (click)="schedule(v)" [disabled]="!v.stock || v.stock <= 0">Seleccionar cita</button>
+            
+            <!-- BOTÓN 2: SELECCIONAR CITA
+                 (click)="schedule(v)" = cuando hace click, ejecuta schedule() pasando el vehículo
+                 [disabled]="!v.stock || v.stock <= 0" = deshabilita el botón si no hay stock (stock 0 o negativo)
+                 Así el usuario no puede agendar cita para vehículos sin stock -->
+            <button type="button" 
+                    class="btn-secondary" 
+                    (click)="schedule(v)" 
+                    [disabled]="!v.stock || v.stock <= 0">
+              Seleccionar cita
+            </button>
           </div>
         </div>
       </div>
