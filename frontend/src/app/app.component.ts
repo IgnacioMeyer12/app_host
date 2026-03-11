@@ -2,8 +2,9 @@
    ============= */
 // Traigo las herramientas necesarias de Angular
 import { Component, OnInit } from '@angular/core';    // Para crear componentes
-import { RouterModule } from '@angular/router';       // Para la navegación entre páginas
+import { Router, RouterModule, NavigationEnd } from '@angular/router';       // Para la navegación entre páginas
 import { CommonModule } from '@angular/common';       // Para usar directivas como *ngIf, *ngFor
+import { filter } from 'rxjs/operators';
 
 /* DECORADOR DEL COMPONENTE
    ======================= */
@@ -21,11 +22,16 @@ import { CommonModule } from '@angular/common';       // Para usar directivas co
 export class AppComponent implements OnInit {  // Implemento OnInit para tener el método ngOnInit
   title = 'Automotores Meyer';  // Una variable con el nombre de mi aplicación
   
-  constructor() {  // Aquí normalmente inyectaría servicios que necesite
-    // Vacío por ahora, pero listo para cuando necesite servicios
+  constructor(private router: Router) {
+    // El router se usa para detectar cuando termina una navegación.
   }
 
   ngOnInit(): void {  // Este método se ejecuta automáticamente al iniciar el componente
-    // Aquí pondría lógica de inicialización, como cargar datos iniciales
+    // Cada vez que hay una navegación completa, forzamos el scroll hacia arriba.
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
   }
 }

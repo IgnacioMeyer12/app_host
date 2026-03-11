@@ -59,15 +59,18 @@ export class CitaComponent implements OnInit {
   // ngOnInit - Se ejecuta al iniciar el componente
   // ============================================
   ngOnInit(): void {
-    // Fecha mínima = hoy
+    // Fecha mínima = hoy (fecha local, no UTC)
     const today = new Date();
-    this.minFecha = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-    
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    this.minFecha = `${year}-${month}-${day}`; // Formato YYYY-MM-DD (local)
+
     // Hora mínima = ahora
     const hours = String(today.getHours()).padStart(2, '0');
     const minutes = String(today.getMinutes()).padStart(2, '0');
     this.minHora = `${hours}:${minutes}`;
-    
+
     // Verificar si viene un ID de vehículo en la URL (ej: ?id=123)
     this.route.queryParams.subscribe(params => {
       if (params['id']) this.selectedVehicleId = params['id'];
@@ -104,13 +107,14 @@ export class CitaComponent implements OnInit {
   fetchAvailability(date: string): void {
     if (!date) return;
     
-    // Validar que la fecha no sea anterior a hoy
-    const selectedDate = new Date(date);
+    // Validar que la fecha no sea anterior a hoy (se parsea como fecha LOCAL para evitar desfases de zona horaria)
+    const [year, month, day] = date.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    selectedDate.setHours(0, 0, 0, 0);
     
-    if (selectedDate < today) {
+    if (selectedDate.getTime() < today.getTime()) {
       this.showError('No puedes seleccionar una fecha anterior a hoy');
       this.fecha = '';
       this.slots = [];
@@ -161,10 +165,11 @@ export class CitaComponent implements OnInit {
     
     // Validar que si es hoy, la hora no haya pasado
     if (this.fecha) {
-      const selectedDate = new Date(this.fecha);
+      const [year, month, day] = this.fecha.split('-').map(Number);
+      const selectedDate = new Date(year, month - 1, day);
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      selectedDate.setHours(0, 0, 0, 0);
       
       if (selectedDate.getTime() === today.getTime()) {
         const now = new Date();

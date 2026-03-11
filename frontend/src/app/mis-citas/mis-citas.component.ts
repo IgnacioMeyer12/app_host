@@ -1,7 +1,6 @@
 // ============================================
 // COMPONENTE MIS CITAS (MisCitasComponent)
 // ============================================
-// ¿Qué hace este código?
 // Muestra al usuario todas sus citas agendadas (pendientes, aceptadas, rechazadas).
 // Se asegura que el usuario haya iniciado sesión, obtiene su DNI del localStorage,
 // y pide al backend las citas asociadas a ese DNI.

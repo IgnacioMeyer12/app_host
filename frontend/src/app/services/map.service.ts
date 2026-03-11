@@ -1,10 +1,8 @@
 // ============================================
 // SERVICIO DE MAPA (MapService)
 // ============================================
-// ¿Qué hace este código?
 // Es un servicio que maneja TODA la lógica de mapas en la aplicación.
 // Centraliza la creación, configuración y manipulación de mapas con Leaflet/OpenStreetMap.
-// Los componentes solo llaman a métodos simples como initMap() o addMarker().
 // ============================================
 
 import { Injectable } from '@angular/core';
@@ -24,10 +22,6 @@ export class MapService {
   private resizeTimeout: any = null;  // Timeout para recálculo de tamaño
 
   constructor() { }
-
-  // ============================================
-  // MÉTODOS PÚBLICOS
-  // ============================================
 
   /**
    * Obtiene la instancia actual del mapa
@@ -78,7 +72,7 @@ export class MapService {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           subdomains: 'abc',
-          maxZoom: 19,
+          maxZoom: 13,
           minZoom: 1,
           tileSize: 256,
           zoomOffset: 0,

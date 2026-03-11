@@ -69,6 +69,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   // ngOnInit - Se ejecuta al iniciar el componente
   // ============================================
   ngOnInit(): void {
+    // Asegura que el usuario siempre vea el inicio de la página al entrar
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+
     this.checkLoginStatus(); // Verifica si hay sesión activa en localStorage
     this.refrescarSucursales(); // Recarga sucursales (para detectar cambios)
   }
@@ -269,6 +272,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             this.currentUser = response.user;
             this.isLoggedIn = true;
             this.loginForm.reset();
+
+            // Asegura que siempre se vuelva al inicio de la página al loguearse
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
           } else {
             this.errorMessage = response.message || 'Error en el login';
           }
@@ -300,6 +306,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isLoggedIn = false;
     this.currentUser = null;
     this.loginForm.reset();
+
+    // Asegura que el scroll vuelva al principio al cerrar sesión
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }
 
   /**
