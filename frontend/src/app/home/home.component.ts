@@ -35,6 +35,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   errorMessage = '';               // Mensajes de error en login
   isLoggedIn = false;              // Indica si hay usuario logueado
   currentUser: any = null;         // Datos del usuario actual
+  isAdmin = false;                 // Indica si el usuario tiene rol admin
   mapInitialized = false;          // Controla si el mapa ya se inicializó
   mapError = false;                // Controla si hubo error al cargar mapa
 
@@ -244,6 +245,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         this.currentUser = JSON.parse(userData);
         this.isLoggedIn = true;
+        // actualizar banderas de rol
+        this.isAdmin = this.currentUser?.rol === 'admin';
       } catch (error) {
         console.error('Error al parsear usuario:', error);
         localStorage.removeItem('currentUser');
@@ -271,6 +274,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             localStorage.setItem('currentUser', JSON.stringify(response.user));
             this.currentUser = response.user;
             this.isLoggedIn = true;
+            // actualizar banderas de rol
+            this.isAdmin = this.currentUser?.rol === 'admin';
             this.loginForm.reset();
 
             // Asegura que siempre se vuelva al inicio de la página al loguearse
@@ -305,6 +310,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     localStorage.removeItem('currentUser');
     this.isLoggedIn = false;
     this.currentUser = null;
+    this.isAdmin = false;
     this.loginForm.reset();
 
     // Asegura que el scroll vuelva al principio al cerrar sesión
@@ -371,6 +377,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   
   /** Navega al catálogo de vehículos */
   verVehiculos(): void { this.router.navigate(['/catalogo']); }
+  
+  /** Navega al panel de administración de vehículos */
+  administrarVehiculos(): void { this.router.navigate(['/administrar-vehiculos']); }
   
   /** Navega al formulario de solicitud de cita */
   realizarCita(): void { this.router.navigate(['/cita']); }

@@ -58,13 +58,24 @@
            SECCIÓN DE IMAGEN
            ============================================ -->
       <div class="image">
-        <!-- Si el vehículo tiene fotos (array fotos con elementos), muestra la primera foto -->
-        <img *ngIf="v.fotos && v.fotos.length" 
-             [src]="v.fotos[0]" 
+        <!-- Imagen principal (puede cambiar si hay varias imágenes) -->
+        <img *ngIf="getMainImage(v)" 
+             [src]="getMainImage(v)" 
              [alt]="v.marca + ' ' + v.modelo" />
-        
+
         <!-- Si NO tiene fotos, muestra un placeholder "No hay foto" -->
         <div *ngIf="!v.fotos || !v.fotos.length" class="no-photo">No hay foto</div>
+
+        <!-- Miniaturas si hay más de una imagen -->
+        <div *ngIf="v.fotos && v.fotos.length > 1" class="thumbnails">
+          <img
+            *ngFor="let img of v.fotos; let i = index"
+            [src]="img"
+            [class.active]="getMainImage(v) === img"
+            (click)="selectImage(v, i)"
+            [alt]="'Miniatura ' + (i + 1)"
+          />
+        </div>
       </div>
 
       <!-- ============================================
@@ -80,6 +91,9 @@
         
         <!-- Precio formateado (llama a la función formatCurrency del .ts) -->
         <p class="price">{{ formatCurrency(v.precio) }}</p>
+
+        <!-- Descripción del vehículo -->
+        <p class="description">{{ v.descripcion || 'Sin descripción disponible' }}</p>
         
         <!-- ============================================
              SECCIÓN DE META DATOS Y ACCIONES

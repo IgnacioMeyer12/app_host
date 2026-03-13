@@ -28,6 +28,9 @@ export class CatalogoComponent implements OnInit {
   loading = false;         // Controla el estado de carga (spinner)
   error = '';              // Mensaje de error si algo falla
 
+  // Índice de imagen seleccionada por vehículo (para mostrar varias imágenes)
+  selectedImageIndex: Record<string, number> = {};
+
   // ============================================
   // CONSTRUCTOR - Inyecta dependencias
   // ============================================
@@ -100,6 +103,23 @@ export class CatalogoComponent implements OnInit {
       style: 'currency', 
       currency: 'USD' 
     }).format(amount);
+  }
+
+  // ============================================
+  // getMainImage - Devuelve la imagen principal seleccionada para un vehículo
+  // ============================================
+  getMainImage(vehicle: any): string | null {
+    if (!vehicle?.fotos || !vehicle.fotos.length) return null;
+    const index = this.selectedImageIndex[vehicle.idVehiculo] ?? 0;
+    return vehicle.fotos[index] || vehicle.fotos[0];
+  }
+
+  // ============================================
+  // selectImage - Cambia la imagen principal mostrada en la tarjeta
+  // ============================================
+  selectImage(vehicle: any, index: number): void {
+    if (!vehicle?.idVehiculo) return;
+    this.selectedImageIndex[vehicle.idVehiculo] = index;
   }
 
   // ============================================

@@ -11,42 +11,42 @@
 // ============================================
 
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms'; // Formularios reactivos
-import { HttpClient } from '@angular/common/http'; // Peticiones HTTP
-import { Router, RouterModule } from '@angular/router'; // Navegación
-import { CommonModule } from '@angular/common'; // Directivas *ngIf, *ngFor
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Router, RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-alta-vehiculo',           // Etiqueta HTML: <app-alta-vehiculo>
-  standalone: true,                         // Componente independiente
-  imports: [ReactiveFormsModule, FormsModule, RouterModule, CommonModule], // Módulos que necesita
-  templateUrl: './alta-vehiculo.component.html', // HTML del componente
-  styleUrls: ['./alta-vehiculo.component.css']   // Estilos del componente
+  selector: 'app-alta-vehiculo',
+  standalone: true,
+  imports: [ReactiveFormsModule, FormsModule, RouterModule, CommonModule],
+  templateUrl: './alta-vehiculo.component.html',
+  styleUrls: ['./alta-vehiculo.component.css']
 })
 export class AltaVehiculoComponent implements OnInit {
   
   // ============================================
   // PROPIEDADES DEL FORMULARIO
   // ============================================
-  vehiculoForm: FormGroup;           // Formulario reactivo
-  loading = false;                    // Estado de carga
-  message = '';                       // Mensaje para el usuario
-  messageType: 'success' | 'error' = 'success'; // Tipo de mensaje (verde/rojo)
-  currentYear = new Date().getFullYear(); // Año actual para validaciones
-  createdVehicle: any = null;          // Datos del vehículo recién creado
+  vehiculoForm: FormGroup;
+  loading = false;
+  message = '';
+  messageType: 'success' | 'error' = 'success';
+  currentYear = new Date().getFullYear();
+  createdVehicle: any = null;
 
   // ============================================
   // PROPIEDADES DE IMÁGENES
   // ============================================
-  imageUrls: string[] = [];            // Array con URLs de las imágenes subidas
-  imageUrlInput = '';                  // Input para agregar URL manualmente
-  previewVehicle: any = null;           // Datos del vehículo en modo preview
-  isVerified = false;                   // Controla si ya se verificó el formulario
+  imageUrls: string[] = [];
+  imageUrlInput = '';
+  previewVehicle: any = null;
+  isVerified = false;
 
   // ============================================
   // UPLOAD DE ARCHIVOS
   // ============================================
-  uploading = false;                    // Indica si se están subiendo archivos
+  uploading = false;
 
   // ============================================
   // OPCIONES DE COLOR (predefinidas)
@@ -54,18 +54,18 @@ export class AltaVehiculoComponent implements OnInit {
   colorOptions = ['#000000', '#ffffff', '#b71c1c', '#0d47a1', '#1b5e20', '#ff9800', '#9c27b0', '#607d8b'];
 
   // ============================================
-  // CONSTRUCTOR - Inyecta dependencias y crea formulario
+  // CONSTRUCTOR
   // ============================================
   constructor(
-    private fb: FormBuilder,      // Para formularios reactivos
-    private http: HttpClient,      // Para peticiones HTTP
-    private router: Router         // Para navegación
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private router: Router
   ) {
-    this.vehiculoForm = this.createForm(); // Crea el formulario al instanciar
+    this.vehiculoForm = this.createForm();
   }
 
   // ============================================
-  // ngOnInit - Se ejecuta al iniciar el componente
+  // ngOnInit
   // ============================================
   ngOnInit(): void {}
 
@@ -75,22 +75,33 @@ export class AltaVehiculoComponent implements OnInit {
   toggle0km(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.vehiculoForm.get('es0km')?.setValue(checked);
+    
     const kmControl = this.vehiculoForm.get('km');
+    const stockControl = this.vehiculoForm.get('stock');
     
     if (checked) {
-      // Si es 0km: setea km a 0 y deshabilita el campo km
+      // Si es 0km: setea km a 0 y actualiza validaciones
       kmControl?.setValue(0);
-      kmControl?.disable({ emitEvent: false });
+      kmControl?.clearValidators(); // Quita los validators
+      kmControl?.setValidators([Validators.min(0)]); // Solo valida que no sea negativo
+      kmControl?.updateValueAndValidity();
       
-      // Asegura que haya al menos 1 en stock
-      const stockControl = this.vehiculoForm.get('stock');
+      // Stock es obligatorio para 0km
+      stockControl?.setValidators([Validators.required, Validators.min(1)]);
       if (!stockControl?.value || parseInt(stockControl?.value) <= 0) {
         stockControl?.setValue(1);
       }
     } else {
-      // Si no es 0km: habilita el campo km nuevamente
-      kmControl?.enable({ emitEvent: false });
+      // Si no es 0km: restaura validaciones del km
+      kmControl?.setValidators([Validators.required, Validators.min(0)]);
+      kmControl?.updateValueAndValidity();
+      
+      // Stock ya no es obligatorio
+      stockControl?.clearValidators();
+      stockControl?.setValue(null);
     }
+    
+    stockControl?.updateValueAndValidity();
   }
 
   // ============================================
@@ -105,26 +116,25 @@ export class AltaVehiculoComponent implements OnInit {
   // ============================================
   createForm(): FormGroup {
     return this.fb.group({
-      // idVehiculo lo genera el backend, no lo ingresa el usuario
-      marca: ['', [Validators.required]],                    // Marca obligatoria
-      modelo: ['', [Validators.required]],                   // Modelo obligatorio
-      anio: ['', [                                           // Año con validaciones
+      marca: ['', [Validators.required]],
+      modelo: ['', [Validators.required]],
+      anio: ['', [
         Validators.required,
         Validators.min(1900),
         Validators.max(this.currentYear + 1)
       ]],
-      precio: ['', [                                          // Precio obligatorio, positivo
+      precio: ['', [
         Validators.required,
         Validators.min(0.01)
       ]],
-      km: ['', [                                              // Kilometraje obligatorio, no negativo
+      km: ['', [
         Validators.required,
         Validators.min(0)
       ]],
-      es0km: [false],                                         // Checkbox 0km (por defecto false)
-      stock: [1],                                             // Stock (por defecto 1)
-      color: ['#000000'],                                     // Color (por defecto negro)
-      descripcion: ['']                                       // Descripción opcional
+      es0km: [false],
+      stock: [null],
+      color: ['#000000'],
+      descripcion: ['']
     });
   }
 
@@ -140,7 +150,6 @@ export class AltaVehiculoComponent implements OnInit {
   // onSubmit - Maneja el envío del formulario
   // ============================================
   onSubmit(): void {
-    // En lugar de enviar directamente, va al paso de verificación
     this.verify();
   }
 
@@ -151,7 +160,7 @@ export class AltaVehiculoComponent implements OnInit {
     const url = this.imageUrlInput?.trim();
     if (!url) return;
     this.imageUrls.push(url);
-    this.imageUrlInput = ''; // Limpia el input
+    this.imageUrlInput = '';
   }
 
   // ============================================
@@ -160,7 +169,6 @@ export class AltaVehiculoComponent implements OnInit {
   onFilesSelected(event: any): void {
     const files: FileList = event.target.files;
     if (files && files.length) this.uploadFiles(files);
-    // Resetea el input para permitir seleccionar el mismo archivo nuevamente
     event.target.value = null;
   }
 
@@ -178,7 +186,7 @@ export class AltaVehiculoComponent implements OnInit {
     try {
       const res: any = await this.http.post('http://localhost:3001/api/upload', form).toPromise();
       if (res && res.success && res.files && res.files.length) {
-        this.imageUrls.push(...res.files); // Agrega las URLs de las imágenes subidas
+        this.imageUrls.push(...res.files);
       }
     } catch (err) {
       console.error('Error subiendo archivos', err);
@@ -246,30 +254,29 @@ export class AltaVehiculoComponent implements OnInit {
   // verify - Verifica el formulario y muestra preview
   // ============================================
   verify(): void {
-    // PASO 1: Validar que el formulario sea válido
+    // PASO 1: Verificar si es 0km y el stock es válido
+    const es0 = this.vehiculoForm.get('es0km')?.value;
+    const stock = this.vehiculoForm.get('stock')?.value;
+    
+    if (es0 && (!stock || stock <= 0)) {
+      this.message = 'Ingrese la cantidad de stock para vehículos 0 km';
+      this.messageType = 'error';
+      this.isVerified = false;
+      return;
+    }
+
+    // PASO 2: Validar que el formulario sea válido
     if (!this.vehiculoForm.valid) {
       this.markAllFieldsAsTouched();
       this.isVerified = false;
       return;
     }
 
-    // PASO 2: Si es 0km, verificar que haya stock
-    const es0 = this.vehiculoForm.get('es0km')?.value;
-    if (es0) {
-      const stock = parseInt(this.vehiculoForm.get('stock')?.value) || 0;
-      if (stock <= 0) {
-        this.message = 'Ingrese la cantidad de stock para vehículos 0 km';
-        this.messageType = 'error';
-        this.isVerified = false;
-        return;
-      }
-    }
-
     // PASO 3: Preparar datos para preview
     const data = this.prepareFormData();
     data.color = this.vehiculoForm.get('color')?.value;
-    data.stock = this.vehiculoForm.get('stock')?.value || 0;
-    data.es0km = this.vehiculoForm.get('es0km')?.value || false;
+    data.stock = es0 ? parseInt(stock) || 0 : 0;
+    data.es0km = es0;
 
     // PASO 4: Crear objeto de preview
     this.previewVehicle = { ...data };
@@ -340,18 +347,19 @@ export class AltaVehiculoComponent implements OnInit {
   // ============================================
   private prepareFormData(): any {
     const formValue = this.vehiculoForm.value;
-
-    // Usar el array imageUrls en lugar de un textarea
-    const fotosArray = this.imageUrls.slice();
+    const es0 = this.vehiculoForm.get('es0km')?.value;
 
     return {
       marca: formValue.marca,
       modelo: formValue.modelo,
       anio: parseInt(formValue.anio),
-      precio: Math.round(parseFloat(formValue.precio) * 100) / 100, // Redondea a 2 decimales
-      km: parseInt(formValue.km),
-      fotos: fotosArray,
-      descripcion: formValue.descripcion || ''
+      precio: Math.round(parseFloat(formValue.precio) * 100) / 100,
+      km: es0 ? 0 : parseInt(formValue.km), // Si es 0km, siempre enviar 0
+      fotos: this.imageUrls.slice(),
+      descripcion: formValue.descripcion || '',
+      color: formValue.color,
+      stock: es0 ? parseInt(formValue.stock) || 0 : 0,
+      es0km: es0
     };
   }
 
@@ -371,7 +379,10 @@ export class AltaVehiculoComponent implements OnInit {
   // limpiarFormulario - Resetea todo el formulario
   // ============================================
   limpiarFormulario(): void {
-    this.vehiculoForm.reset();
+    this.vehiculoForm.reset({
+      es0km: false,
+      color: '#000000'
+    });
     this.imageUrls = [];
     this.imageUrlInput = '';
     this.previewVehicle = null;

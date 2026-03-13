@@ -523,6 +523,182 @@ app.get('/api/vehiculos', async (req, res) => {
   }
 });
 
+/* ENDPOINT: GET /api/vehiculos/todas
+   ==================================
+   Obtiene todos los vehículos (activos e inactivos) */
+app.get('/api/vehiculos/todas', async (req, res) => {
+  const connection = await connectDB();
+
+  try {
+    const [vehicles] = await connection.execute(
+      'SELECT * FROM vehiculos ORDER BY fecha_creacion DESC'
+    );
+
+    const vehiclesWithParsedPhotos = vehicles.map(vehicle => ({
+      ...vehicle,
+      fotos: vehicle.fotos ? JSON.parse(vehicle.fotos) : [],
+      color: vehicle.color,
+      stock: vehicle.stock
+    }));
+
+    res.json({ success: true, vehiculos: vehiclesWithParsedPhotos });
+  } catch (error) {
+    console.error('Error obteniendo todos los vehículos:', error);
+    res.status(500).json({ success: false, message: 'Error del servidor' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+/* ENDPOINT: PUT /api/vehiculos/:id
+   ===============================
+   Actualiza un vehículo existente (parcialmente) */
+app.put('/api/vehiculos/:id', async (req, res) => {
+  const idVehiculo = req.params.id;
+  const {
+    marca,
+    modelo,
+    anio,
+    precio,
+    km,
+    stock,
+    color,
+    fotos,
+    descripcion,
+    activo
+  } = req.body;
+
+  if (!idVehiculo) {
+    return res.status(400).json({ success: false, message: 'ID de vehículo requerido' });
+  }
+
+  /* Validaciones básicas si se envían campos */
+  if (anio !== undefined && (anio < 1900 || anio > new Date().getFullYear() + 1)) {
+    return res.status(400).json({ success: false, message: 'El año debe ser válido' });
+  }
+  if (precio !== undefined && precio < 0) {
+    return res.status(400).json({ success: false, message: 'El precio debe ser mayor o igual a 0' });
+  }
+  if (km !== undefined && km < 0) {
+    return res.status(400).json({ success: false, message: 'El kilometraje no puede ser negativo' });
+  }
+  if (stock !== undefined && stock < 0) {
+    return res.status(400).json({ success: false, message: 'El stock no puede ser negativo' });
+  }
+
+  const connection = await connectDB();
+
+  try {
+    /* Verificar que el vehículo exista */
+    const [existing] = await connection.execute(
+      'SELECT idVehiculo FROM vehiculos WHERE idVehiculo = ?',
+      [idVehiculo]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Vehículo no encontrado' });
+    }
+
+    /* Construir query dinámicamente según los campos enviados */
+    const updates = [];
+    const params = [];
+
+    if (marca !== undefined) {
+      updates.push('marca = ?');
+      params.push(marca);
+    }
+    if (modelo !== undefined) {
+      updates.push('modelo = ?');
+      params.push(modelo);
+    }
+    if (anio !== undefined) {
+      updates.push('anio = ?');
+      params.push(anio);
+    }
+    if (precio !== undefined) {
+      updates.push('precio = ?');
+      params.push(precio);
+    }
+    if (km !== undefined) {
+      updates.push('km = ?');
+      params.push(km);
+    }
+    if (stock !== undefined) {
+      updates.push('stock = ?');
+      params.push(stock);
+    }
+    if (color !== undefined) {
+      updates.push('color = ?');
+      params.push(color);
+    }
+    if (fotos !== undefined) {
+      updates.push('fotos = ?');
+      params.push(JSON.stringify(fotos));
+    }
+    if (descripcion !== undefined) {
+      updates.push('descripcion = ?');
+      params.push(descripcion);
+    }
+    if (activo !== undefined) {
+      updates.push('activo = ?');
+      params.push(activo);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'No hay campos para actualizar' });
+    }
+
+    const sql = `UPDATE vehiculos SET ${updates.join(', ')} WHERE idVehiculo = ?`;
+    params.push(idVehiculo);
+
+    const [result] = await connection.execute(sql, params);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Vehículo no encontrado' });
+    }
+
+    /* Devolver el vehículo actualizado */
+    const [rows] = await connection.execute('SELECT * FROM vehiculos WHERE idVehiculo = ?', [idVehiculo]);
+    const updated = rows[0]
+      ? { ...rows[0], fotos: rows[0].fotos ? JSON.parse(rows[0].fotos) : [] }
+      : null;
+
+    res.json({ success: true, message: 'Vehículo actualizado', vehiculo: updated });
+  } catch (error) {
+    console.error('Error actualizando vehículo:', error);
+    res.status(500).json({ success: false, message: 'Error del servidor' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+/* ENDPOINT: DELETE /api/vehiculos/:id
+   ================================
+   Elimina un vehículo de la base de datos */
+app.delete('/api/vehiculos/:id', async (req, res) => {
+  const idVehiculo = req.params.id;
+
+  if (!idVehiculo) {
+    return res.status(400).json({ success: false, message: 'ID de vehículo requerido' });
+  }
+
+  const connection = await connectDB();
+  try {
+    const [result] = await connection.execute('DELETE FROM vehiculos WHERE idVehiculo = ?', [idVehiculo]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Vehículo no encontrado' });
+    }
+
+    res.json({ success: true, message: 'Vehículo eliminado exitosamente' });
+  } catch (error) {
+    console.error('Error eliminando vehículo:', error);
+    res.status(500).json({ success: false, message: 'Error del servidor' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 /* ENDPOINT: GET /api/vehiculos-generados
    =======================================
    Obtiene vehículos de la tabla de "semillas" (vehículos generados automáticamente) */
@@ -1602,7 +1778,6 @@ async function startServer() {
       console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🔑 Usuario admin: DNI 12345678, Contraseña: admin123`);
       console.log(`👤 Usuario cliente: DNI 87654321, Contraseña: cliente123`);
-      console.log(`💡 Esta es solo la API. El frontend Angular debe ejecutarse por separado.`);
     });
   } catch (error) {
     /* Si hay error al iniciar */

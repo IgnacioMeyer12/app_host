@@ -10,6 +10,7 @@ import { CitaComponent } from './cita/cita.component';                    /* Age
 import { CitasAdminComponent } from './citas-admin/citas-admin.component'; /* Admin: ver todas las citas */
 import { MisCitasComponent } from './mis-citas/mis-citas.component';       /* Usuario: ver sus citas */
 import { AdministrarSucursalesComponent } from './administrar-sucursales/administrar-sucursales.component';       /* Usuario: ver sus citas */
+import { AdministrarVehiculosComponent } from './administrar-vehiculos/administrar-vehiculos.component'; /* Gestión de vehículos */
 
 /* DEFINICIÓN DE RUTAS */
 export const routes: Routes = [
@@ -29,5 +30,7 @@ export const routes: Routes = [
   { path: 'mis-citas', component: MisCitasComponent }, /* cliente sus citas */
   /* Ruta: /administrar-sucursales → muestra AdministrarSucursalesComponent (admin gestiona sucursales) */
   { path: 'administrar-sucursales', component: AdministrarSucursalesComponent }, /* admin gestiona sucursales */
+  /* Ruta: /administrar-vehiculos → muestra AdministrarVehiculosComponent (cliente/usuario gestiona vehículos) */
+  { path: 'administrar-vehiculos', component: AdministrarVehiculosComponent },
   { path: '**', redirectTo: '' }
 ];
