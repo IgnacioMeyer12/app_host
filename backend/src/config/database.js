@@ -1,21 +1,27 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-// Configuración de la conexión a MySQL
+// Configuración de la conexión a MySQL con Sequelize
 const sequelize = new Sequelize(
-  process.env.DB_NAME,      // nombre de la base de datos
-  process.env.DB_USER,      // usuario (root para XAMPP)
-  process.env.DB_PASSWORD,  // contraseña (vacía por defecto en XAMPP)
+  process.env.DB_NAME || 'automotores_meyer_db',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASSWORD || '',
   {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: process.env.DB_DIALECT || 'mysql',
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
+    dialect: 'mysql',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
       acquire: 30000,
       idle: 10000
+    },
+    define: {
+      timestamps: true,
+      underscored: true,
+      createdAt: 'fecha_creacion',
+      updatedAt: 'fecha_actualizacion'
     }
   }
 );
@@ -25,11 +31,11 @@ const testConnection = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Conexión a MySQL establecida correctamente');
-    
+
     // Sincronizar modelos con la base de datos
     await sequelize.sync({ force: false });
     console.log('✅ Modelos sincronizados con la base de datos');
-    
+
   } catch (error) {
     console.error('❌ Error al conectar con MySQL:', error.message);
     console.log('💡 Verifica que:');
