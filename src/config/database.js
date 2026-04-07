@@ -3,9 +3,16 @@ require('dotenv').config();
 
 let sequelize;
 
-if (process.env.DATABASE_URL) {
-  // Para Railway u otros servicios que proporcionan DATABASE_URL
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+const dbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.MYSQLPUBLICURL || process.env.MYSQL_PUBLIC_URL;
+const dbHost = process.env.DB_HOST || process.env.MYSQLHOST || process.env.MYSQL_HOST || process.env.RAILWAY_PRIVATE_DOMAIN || 'localhost';
+const dbPort = Number(process.env.DB_PORT || process.env.MYSQLPORT || process.env.MYSQL_PORT || 3306);
+const dbUser = process.env.DB_USER || process.env.MYSQLUSER || process.env.MYSQL_USER || 'root';
+const dbPassword = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || '';
+const dbName = process.env.DB_NAME || process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'automotores_meyer_db';
+
+if (dbUrl) {
+  // Para Railway u otros servicios que proporcionan URL de conexión
+  sequelize = new Sequelize(dbUrl, {
     dialect: 'mysql',
     dialectModule: require('mysql2'),
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
@@ -23,13 +30,7 @@ if (process.env.DATABASE_URL) {
     }
   });
 } else {
-  // Configuración local
-  const dbHost = process.env.DB_HOST || 'localhost';
-  const dbPort = Number(process.env.DB_PORT || 3306);
-  const dbUser = process.env.DB_USER || 'root';
-  const dbPassword = process.env.DB_PASSWORD || '';
-  const dbName = process.env.DB_NAME || 'automotores_meyer_db';
-
+  // Configuración local o Railway con vars separadas
   sequelize = new Sequelize(dbName, dbUser, dbPassword, {
     host: dbHost,
     port: dbPort,
