@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-vendedor-calificaciones',
@@ -37,7 +38,7 @@ export class VendedorCalificacionesComponent implements OnInit {
 
   fetchCalificaciones(): void {
     this.loading = true;
-    this.http.get('http://localhost:3001/api/calificaciones/mis-calificaciones').subscribe({
+    this.http.get(`${environment.apiUrl}/calificaciones/mis-calificaciones`).subscribe({
       next: (res: any) => {
         this.loading = false;
         if (res.success) {

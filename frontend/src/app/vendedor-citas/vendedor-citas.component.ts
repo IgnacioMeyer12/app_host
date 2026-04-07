@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-vendedor-citas',
@@ -61,7 +62,7 @@ export class VendedorCitasComponent implements OnInit {
 
   fetchCitas(): void {
     this.loading = true;
-    this.http.get('http://localhost:3001/api/citas/vendedor-citas').subscribe({
+    this.http.get(`${environment.apiUrl}/citas/vendedor-citas`).subscribe({
       next: (res: any) => {
         this.loading = false;
         if (res.success) {
@@ -81,7 +82,7 @@ export class VendedorCitasComponent implements OnInit {
     if (!cita || !cita.id || cita.estado !== 'confirmada') return;
 
     this.loading = true;
-    this.http.put(`http://localhost:3001/api/citas/${cita.id}/finalizar`, {}).subscribe({
+    this.http.put(`${environment.apiUrl}/citas/${cita.id}/finalizar`, {}).subscribe({
       next: (res: any) => {
         this.loading = false;
         if (res.success) {

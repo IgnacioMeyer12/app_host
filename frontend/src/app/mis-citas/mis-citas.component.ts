@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';       // Para usar directivas co
 import { HttpClient } from '@angular/common/http';    // Para hacer peticiones HTTP
 import { Router, RouterModule } from '@angular/router'; // Para navegar entre páginas
 import { FormsModule } from '@angular/forms'; // Para usar ngModel en formularios
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-mis-citas',           // Etiqueta HTML: <app-mis-citas>
@@ -62,7 +63,7 @@ export class MisCitasComponent implements OnInit {
     this.loading = true; // Activa el estado de carga
     
     // Hace una petición GET al backend que usa el token para determinar el usuario
-    this.http.get('http://localhost:3001/api/citas/mis-citas').subscribe({
+    this.http.get(`${environment.apiUrl}/citas/mis-citas`).subscribe({
       next: (res: any) => { // Si la petición funciona
         this.loading = false;
         
@@ -109,7 +110,7 @@ export class MisCitasComponent implements OnInit {
     }
 
     this.loading = true;
-    this.http.post('http://localhost:3001/api/calificaciones', {
+    this.http.post(`${environment.apiUrl}/calificaciones`, {
       idCita: cita.id,
       puntuacion: rating.puntuacion,
       comentario: rating.comentario || ''

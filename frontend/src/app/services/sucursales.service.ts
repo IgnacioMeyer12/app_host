@@ -4,6 +4,7 @@
 import { Injectable } from '@angular/core';      // Hace que el servicio sea inyectable
 import { HttpClient } from '@angular/common/http'; // Permite hacer peticiones HTTP
 import { Observable } from 'rxjs';                // Maneja respuestas asíncronas
+import { environment } from '../../environments/environment';
 
 /* INTERFAZ SUCURSAL - Define la estructura de datos de una sucursal */
 export interface Sucursal {
@@ -24,7 +25,7 @@ export interface Sucursal {
 })
 export class SucursalesService {
   
-  private apiUrl = 'http://localhost:3001/api/sucursales';  // URL del backend
+  private apiUrl = `${environment.apiUrl}/sucursales`;  // URL del backend
 
   constructor(private http: HttpClient) { } // Inyecta HttpClient para hacer peticiones
 

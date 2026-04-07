@@ -15,6 +15,7 @@ import { HttpClient } from '@angular/common/http';    // Para peticiones HTTP
 import { FormsModule } from '@angular/forms';         // Para usar [(ngModel)] en formularios
 import { NotificationService } from '../services/notification.service';
 import { SucursalesService } from '../services/sucursales.service';
+import { environment } from '../../environments/environment';
 
 /* DECORADOR DEL COMPONENTE */
 @Component({
@@ -153,7 +154,7 @@ export class CitaComponent implements OnInit {
   // ============================================
   fetchVehicles(): void {
     this.loading = true;
-    this.http.get('http://localhost:3001/api/vehiculos').subscribe({
+    this.http.get(`${environment.apiUrl}/vehiculos`).subscribe({
       next: (resp: any) => {
         this.loading = false;
         if (resp?.success) {
@@ -258,7 +259,7 @@ export class CitaComponent implements OnInit {
     }
 
     // Obtener slots disponibles
-    this.http.get('http://localhost:3001/api/citas/availability', { params }).subscribe({
+    this.http.get(`${environment.apiUrl}/citas/availability`, { params }).subscribe({
       next: (res: any) => {
         if (res?.success) {
           // El backend devuelve availableSlots en vez de slots
@@ -347,7 +348,7 @@ export class CitaComponent implements OnInit {
   fetchVendedores(idSucursal?: number): void {
     if (idSucursal) {
       // Cargar vendedores de una sucursal específica
-      this.http.get(`http://localhost:3001/api/vendedores/sucursal/${idSucursal}`).subscribe({
+      this.http.get(`${environment.apiUrl}/vendedores/sucursal/${idSucursal}`).subscribe({
         next: (res: any) => {
           if (res?.success && Array.isArray(res.vendedores)) {
             this.vendors = res.vendedores;
@@ -385,7 +386,7 @@ export class CitaComponent implements OnInit {
   // fetchAllVendedores - Obtiene todos los vendedores del sistema
   // ============================================
   fetchAllVendedores(): void {
-    this.http.get('http://localhost:3001/api/vendedores').subscribe({
+    this.http.get(`${environment.apiUrl}/vendedores`).subscribe({
       next: (res: any) => {
         if (res?.success && Array.isArray(res.vendedores)) {
           this.vendors = res.vendedores;
@@ -543,7 +544,7 @@ export class CitaComponent implements OnInit {
     if (this.selectedVehicleId != null) availabilityParams.idVehiculo = this.selectedVehicleId;
     if (this.selectedVendorId != null) availabilityParams.idVendedor = this.selectedVendorId;
 
-    this.http.get('http://localhost:3001/api/citas/availability', {
+    this.http.get(`${environment.apiUrl}/citas/availability`, {
       params: availabilityParams
     }).subscribe({
       next: (res: any) => {
@@ -607,7 +608,7 @@ export class CitaComponent implements OnInit {
         };
 
         this.loading = true;
-        this.http.post('http://localhost:3001/api/citas', payload).subscribe({
+        this.http.post(`${environment.apiUrl}/citas`, payload).subscribe({
           next: (postRes: any) => {
             this.loading = false;
             if (postRes?.success) {

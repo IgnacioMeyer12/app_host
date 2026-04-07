@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';       // Para directivas *ngIf, 
 import { Router, RouterModule } from '@angular/router'; // Para navegación y routerLink
 import { HttpClient } from '@angular/common/http';    // Para peticiones HTTP
 import { FormsModule } from '@angular/forms';         // Para ngModel en formularios
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-catalogo',           // Etiqueta HTML: <app-catalogo>
@@ -99,7 +100,7 @@ export class CatalogoComponent implements OnInit {
   // fetchSucursales - Obtiene las sucursales para filtro
   // ============================================
   fetchSucursales(): void {
-    this.http.get('http://localhost:3001/api/sucursales').subscribe({
+    this.http.get(`${environment.apiUrl}/sucursales`).subscribe({
       next: (res: any) => {
         if (res && res.success) {
           this.sucursales = res.sucursales || [];
@@ -139,7 +140,7 @@ export class CatalogoComponent implements OnInit {
     params.sortOrder = this.filters.sortOrder;
 
     // Petición GET al backend con parámetros de búsqueda
-    const endpoint = 'http://localhost:3001/api/vehiculos/';
+    const endpoint = `${environment.apiUrl}/vehiculos/`;
 
     this.http.get(endpoint, { params }).subscribe({
       next: (resp: any) => {  // Si la petición es exitosa
@@ -164,7 +165,7 @@ export class CatalogoComponent implements OnInit {
 
         if (err.status === 0) {
           // Error de conexión (servidor no disponible)
-          this.error = 'No se puede conectar al servidor. Verifica que el backend esté en http://localhost:3001';
+          this.error = 'No se puede conectar al servidor.';
         } else {
           // Otro tipo de error (ej: 500, 404)
           this.error = err.error?.message || 'Error cargando vehículos';
@@ -281,7 +282,7 @@ export class CatalogoComponent implements OnInit {
       fotos: this.editVehicleData.fotos
     };
 
-    this.http.put(`http://localhost:3001/api/vehiculos/${this.editVehicleId}`, payload).subscribe({
+    this.http.put(`${environment.apiUrl}/vehiculos/${this.editVehicleId}`, payload).subscribe({
       next: (res: any) => {
         if (res && res.success) {
           this.editMessage = 'Vehículo actualizado exitosamente.';
@@ -336,8 +337,8 @@ export class CatalogoComponent implements OnInit {
 
     console.log('Procediendo con eliminación...');
 
-    console.log('Enviando DELETE request a:', `http://localhost:3001/api/vehiculos/${vehicle.idVehiculo}`);
-    this.http.delete(`http://localhost:3001/api/vehiculos/${vehicle.idVehiculo}`).subscribe({
+    console.log('Enviando DELETE request a:', `${environment.apiUrl}/vehiculos/${vehicle.idVehiculo}`);
+    this.http.delete(`${environment.apiUrl}/vehiculos/${vehicle.idVehiculo}`).subscribe({
       next: (res: any) => {
         console.log('Respuesta del DELETE:', res);
         if (res && res.success) {
@@ -358,7 +359,7 @@ export class CatalogoComponent implements OnInit {
         this.editMessage = '';
       }
     });
-    this.http.delete(`http://localhost:3001/api/vehiculos/${vehicle.idVehiculo}`).subscribe({
+    this.http.delete(`${environment.apiUrl}/vehiculos/${vehicle.idVehiculo}`).subscribe({
       next: (res: any) => {
         console.log('Respuesta del DELETE:', res);
         if (res && res.success) {

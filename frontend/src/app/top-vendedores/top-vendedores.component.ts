@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-top-vendedores',
@@ -19,7 +20,7 @@ export class TopVendedoresComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading = true;
-    this.http.get('http://localhost:3001/api/calificaciones/ranking').subscribe({
+    this.http.get(`${environment.apiUrl}/calificaciones/ranking`).subscribe({
       next: (res: any) => {
         this.loading = false;
         if (res.success) {

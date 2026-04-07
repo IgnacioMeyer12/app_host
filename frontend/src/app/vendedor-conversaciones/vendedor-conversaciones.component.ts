@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-vendedor-conversaciones',
@@ -56,7 +57,7 @@ export class VendedorConversacionesComponent implements OnInit {
 
   fetchConversaciones(): void {
     this.loading = true;
-    this.http.get('http://localhost:3001/api/conversaciones/mis-conversaciones').subscribe({
+    this.http.get(`${environment.apiUrl}/conversaciones/mis-conversaciones`).subscribe({
       next: (res: any) => {
         this.loading = false;
         if (res.success) {
@@ -136,7 +137,7 @@ export class VendedorConversacionesComponent implements OnInit {
   fetchConversacion(idCita: number): void {
     if (!idCita) return;
 
-    this.http.get(`http://localhost:3001/api/conversaciones/cita/${idCita}`).subscribe({
+    this.http.get(`${environment.apiUrl}/conversaciones/cita/${idCita}`).subscribe({
       next: (res: any) => {
         if (res?.success) {
           const citaData = res.cita || this.conversacionSeleccionada?.cita || {};
@@ -234,7 +235,7 @@ export class VendedorConversacionesComponent implements OnInit {
 
   marcarComoLeido(idCita: number): void {
     if (!idCita) return;
-    this.http.put(`http://localhost:3001/api/conversaciones/cita/${idCita}/leido`, {}).subscribe({
+    this.http.put(`${environment.apiUrl}/conversaciones/cita/${idCita}/leido`, {}).subscribe({
       next: () => {
         const conv = this.conversaciones.find(c => c.idCita === idCita);
         if (conv) conv.mensajesNoLeidos = 0;
@@ -279,7 +280,7 @@ export class VendedorConversacionesComponent implements OnInit {
       tipo: 'texto'
     };
 
-    this.http.post('http://localhost:3001/api/conversaciones', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/conversaciones`, payload).subscribe({
       next: (res: any) => {
         this.enviandoMensaje = false;
         if (res.success) {
@@ -391,7 +392,7 @@ export class VendedorConversacionesComponent implements OnInit {
       }
       if (!confirm('¿Seguro que deseas finalizar esta cita?')) return;
       this.loading = true;
-      this.http.put(`http://localhost:3001/api/citas/${cita.id}/finalizar`, {}).subscribe({
+      this.http.put(`${environment.apiUrl}/citas/${cita.id}/finalizar`, {}).subscribe({
         next: (res: any) => {
           this.loading = false;
           if (res.success) {

@@ -10,6 +10,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';       // Para directivas *ngIf, *ngFor
 import { HttpClient } from '@angular/common/http';    // Para peticiones HTTP
 import { Router, RouterModule } from '@angular/router'; // Para navegación y redirecciones
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-citas-admin',           // Etiqueta HTML: <app-citas-admin>
@@ -58,7 +59,7 @@ export class CitasAdminComponent implements OnInit {
   cargarCitas(): void {
     this.loading = true; // Activa spinner de carga
     
-    this.http.get('http://localhost:3001/api/citas').subscribe({
+    this.http.get(`${environment.apiUrl}/citas`).subscribe({
       next: (res: any) => {
         this.loading = false;
         
@@ -161,10 +162,10 @@ export class CitasAdminComponent implements OnInit {
     let endpoint = '';
     let body: any = {};
     if (estado === 'aceptada') {
-      endpoint = `http://localhost:3001/api/citas/${cita.id}/confirmar`;
+      endpoint = `${environment.apiUrl}/citas/${cita.id}/confirmar`;
       body = {};
     } else if (estado === 'rechazada') {
-      endpoint = `http://localhost:3001/api/citas/${cita.id}/cancelar`;
+      endpoint = `${environment.apiUrl}/citas/${cita.id}/cancelar`;
       body = { motivo: adminMessage };
     }
     this.http.put(endpoint, body).subscribe({

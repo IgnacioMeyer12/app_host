@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Marca {
   id: number;
@@ -13,7 +14,7 @@ export interface Marca {
 
 @Injectable({ providedIn: 'root' })
 export class MarcasService {
-  private apiUrl = 'http://localhost:3001/api/marcas';
+  private apiUrl = `${environment.apiUrl}/marcas`;
 
   constructor(private http: HttpClient) {}
 

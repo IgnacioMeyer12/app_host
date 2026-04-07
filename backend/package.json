@@ -5,8 +5,7 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "node src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/app.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -15,14 +14,10 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "mysql2": "^3.15.3",
-    "sequelize": "^6.35.2",
-    "sqlite3": "^6.0.1"
+    "mysql2": "^3.20.0",
+    "nodemon": "^3.1.10"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "nodemon": "^3.1.10"
-  }
+  "license": "ISC"
 }

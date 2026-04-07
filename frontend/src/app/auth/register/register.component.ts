@@ -14,6 +14,7 @@ import { HttpClient } from '@angular/common/http'; // Para peticiones HTTP
 import { Router, RouterModule, ActivatedRoute } from '@angular/router'; // Para navegación y parámetros URL
 import { CommonModule } from '@angular/common'; // Para directivas *ngIf, *ngFor
 import { NotificationService } from '../../services/notification.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-register',                    // Etiqueta HTML: <app-register>
@@ -186,7 +187,7 @@ export class RegisterComponent implements OnInit {
       payload.rol = this.roleToCreate;      // Rol a asignar: admin o vendedor
 
       // Envía al mismo endpoint pero con datos de admin
-      this.http.post('http://localhost:3001/api/auth/register', payload).subscribe({
+      this.http.post(`${environment.apiUrl}/auth/register`, payload).subscribe({
         next: (res: any) => {
           this.loading = false;
           if (res?.success) {
@@ -206,7 +207,7 @@ export class RegisterComponent implements OnInit {
 
     } else {
       // REGISTRO PÚBLICO (clientes)
-      this.http.post('http://localhost:3001/api/auth/register', payload).subscribe({
+      this.http.post(`${environment.apiUrl}/auth/register`, payload).subscribe({
         next: (response: any) => {
           this.loading = false;
           if (response.success) {

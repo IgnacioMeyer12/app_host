@@ -17,6 +17,7 @@ import { Router, RouterModule } from '@angular/router'; // Para navegación
 import { CommonModule } from '@angular/common'; // Para directivas como *ngIf, *ngFor
 import { MapService } from '../services/map.service'; // Servicio personalizado para mapas
 import { SucursalesService } from '../services/sucursales.service'; // Servicio para sucursales
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-home',                          // Etiqueta HTML: <app-home>
@@ -285,7 +286,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
    * Verifica que el backend esté disponible vía endpoint de healthcheck
    */
   checkServerStatus(): void {
-    this.http.get<any>('http://localhost:3001/api/health').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/health`).subscribe({
       next: () => {
         this.serverOnline = true;
       },
@@ -308,7 +309,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       
       const loginData = this.loginForm.value;
       
-      this.http.post('http://localhost:3001/api/auth/login', loginData).subscribe({
+      this.http.post(`${environment.apiUrl}/auth/login`, loginData).subscribe({
         next: (response: any) => {
           this.loading = false;
           

@@ -18,6 +18,7 @@ import { CommonModule } from '@angular/common';
 import { SucursalesService, Sucursal } from '../services/sucursales.service';
 import { MarcasService, Marca } from '../services/marcas.service';
 import { NotificationService } from '../services/notification.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-alta-vehiculo',
@@ -234,7 +235,7 @@ export class AltaVehiculoComponent implements OnInit {
     arr.forEach(f => form.append('files', f));
 
     try {
-      const res: any = await this.http.post('http://localhost:3001/api/upload', form).toPromise();
+      const res: any = await this.http.post(`${environment.apiUrl}/upload`, form).toPromise();
       if (res && res.success && res.files && res.files.length) {
         this.imageUrls.push(...res.files);
       }
@@ -348,7 +349,7 @@ export class AltaVehiculoComponent implements OnInit {
     this.loading = true;
     this.message = '';
 
-    this.http.post('http://localhost:3001/api/vehiculos', this.previewVehicle)
+    this.http.post(`${environment.apiUrl}/vehiculos`, this.previewVehicle)
       .subscribe({
         next: (response: any) => {
           this.loading = false;
