@@ -13,6 +13,8 @@ export interface Sucursal {
   telefono?: string;       // Teléfono (opcional)
   latitud: number;         // Latitud para el mapa
   longitud: number;        // Longitud para el mapa
+  horario_inicio?: string; // Horario de apertura HH:mm
+  horario_fin?: string;    // Horario de cierre HH:mm
   activa: boolean;         // Estado (activa/inactiva)
   fecha_creacion?: string; // Fecha (opcional, la pone el backend)
 }

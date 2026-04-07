@@ -15,6 +15,12 @@ export interface Vehiculo {
   fotos: string[];
   descripcion?: string;
   activo: boolean;
+  idSucursal?: number;
+  sucursal?: {
+    id: number;
+    nombre: string;
+    direccion: string;
+  };
   fecha_creacion?: string;
   fecha_actualizacion?: string;
 }

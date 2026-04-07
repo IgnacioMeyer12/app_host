@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const calificacionesController = require('../controllers/calificacionesController');
-const auth = require('../middleware/auth');
+const { authenticateToken, requireVendedor } = require('../middleware/auth');
 
 // Todas las rutas requieren autenticación
-router.use(auth);
+router.use(authenticateToken);
 
 // Crear calificación (solo clientes)
-router.post('/', auth, (req, res, next) => {
+router.post('/', authenticateToken, (req, res, next) => {
   if (req.user.rol !== 'cliente') {
     return res.status(403).json({
       success: false,
@@ -19,6 +19,9 @@ router.post('/', auth, (req, res, next) => {
 
 // Obtener calificaciones de un vendedor
 router.get('/vendedor/:idVendedor', calificacionesController.getByVendedor);
+
+// Obtener calificaciones del vendedor logueado
+router.get('/mis-calificaciones', authenticateToken, requireVendedor, calificacionesController.getMyCalificaciones);
 
 // Obtener ranking de vendedores
 router.get('/ranking', calificacionesController.getRanking);

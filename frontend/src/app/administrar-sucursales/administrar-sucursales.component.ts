@@ -16,6 +16,7 @@ import { CommonModule } from '@angular/common'; // Directivas *ngIf, *ngFor
 import { RouterModule, Router } from '@angular/router'; // Navegación
 import { SucursalesService, Sucursal } from '../services/sucursales.service'; // Servicio de sucursales
 import { MapService } from '../services/map.service'; // Servicio de mapas
+import { NotificationService } from '../services/notification.service';
 
 // Interfaz para la vista previa (sin id ni fecha_creacion)
 interface PreviewSucursal {
@@ -24,6 +25,8 @@ interface PreviewSucursal {
   telefono: string;
   latitud: number;
   longitud: number;
+  horario_inicio: string;
+  horario_fin: string;
 }
 
 @Component({
@@ -84,15 +87,18 @@ export class AdministrarSucursalesComponent implements OnInit {
     private fb: FormBuilder,                    // Para formularios reactivos
     private sucursalesService: SucursalesService, // Servicio de sucursales
     private mapService: MapService,              // Servicio de mapas
-    private router: Router                       // Para navegación
+    private router: Router,                      // Para navegación
+    private notificationService: NotificationService
   ) {
     // Configura el formulario con validaciones
     this.sucursalForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(3)]], // Nombre obligatorio, mínimo 3 caracteres
-      direccion: [''],                         // Dirección opcional
-      telefono: [''],                           // Teléfono opcional
-      latitud: ['', [Validators.required]],     // Latitud obligatoria
-      longitud: ['', [Validators.required]]     // Longitud obligatoria
+      nombre: ['', [Validators.required, Validators.minLength(3)]],
+      direccion: [''],
+      telefono: [''],
+      latitud: ['', [Validators.required]],
+      longitud: ['', [Validators.required]],
+      horario_inicio: ['09:00', [Validators.required, Validators.pattern('^([01]\\d|2[0-3]):([0-5]\\d)$')]],
+      horario_fin: ['18:00', [Validators.required, Validators.pattern('^([01]\\d|2[0-3]):([0-5]\\d)$')]]
     });
   }
 
@@ -206,7 +212,9 @@ export class AdministrarSucursalesComponent implements OnInit {
           direccion: this.sucursalForm.get('direccion')?.value || direccion || 'Dirección no disponible',
           telefono: this.sucursalForm.get('telefono')?.value || '-',
           latitud: this.sucursalForm.get('latitud')?.value,
-          longitud: this.sucursalForm.get('longitud')?.value
+          longitud: this.sucursalForm.get('longitud')?.value,
+          horario_inicio: this.sucursalForm.get('horario_inicio')?.value,
+          horario_fin: this.sucursalForm.get('horario_fin')?.value
         };
 
         this.isVerified = true;
@@ -287,7 +295,9 @@ export class AdministrarSucursalesComponent implements OnInit {
       direccion: sucursal.direccion || '',
       telefono: sucursal.telefono || '',
       latitud: sucursal.latitud,
-      longitud: sucursal.longitud
+      longitud: sucursal.longitud,
+      horario_inicio: sucursal.horario_inicio || '09:00',
+      horario_fin: sucursal.horario_fin || '18:00'
     });
     this.selectedLatitude = sucursal.latitud;
     this.selectedLongitude = sucursal.longitud;
@@ -474,7 +484,7 @@ export class AdministrarSucursalesComponent implements OnInit {
         this.sucursalesService.crearSucursal(datos).subscribe({
           next: (response) => {
             if (response.success) {
-              this.message = 'Sucursal creada correctamente';
+              this.message = this.notificationService.success('Sucursal creada correctamente');
               this.messageType = 'success';
               this.isVerified = false;
               this.showForm = false;

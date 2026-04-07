@@ -1,0 +1,47 @@
+<div class="container">
+  <h2>Mis citas como vendedor</h2>
+  <div *ngIf="loading" class="loading">Cargando citas...</div>
+  <div *ngIf="message && !loading" class="message">{{ message }}</div>
+  <div *ngIf="!loading && citas.length === 0" class="message">No tienes citas asignadas actualmente.</div>
+  <div *ngIf="!loading && citas.length > 0" class="grid">
+    <div *ngFor="let cita of citas" class="card">
+      <p><strong>Cliente:</strong> {{ cita.cliente?.nombre || cita.cliente?.email || 'N/A' }} {{ cita.cliente?.apellido || '' }}</p>
+      <div class="vehiculo-info">
+        <ng-container *ngIf="cita.vehiculo?.fotos && cita.vehiculo.fotos.length > 0; else sinFoto">
+          <img [src]="cita.vehiculo.fotos[0]" alt="Foto vehículo" class="vehiculo-img" />
+        </ng-container>
+        <ng-template #sinFoto>
+          <div class="vehiculo-img-placeholder">Sin foto</div>
+        </ng-template>
+        <div>
+          <p><strong>Vehículo:</strong> {{ cita.vehiculo?.marca?.nombre || 'N/A' }} {{ cita.vehiculo?.modelo || cita.vehiculo?.patente || 'N/A' }} ({{ cita.vehiculo?.anio || 'N/D' }})</p>
+          <p><strong>Color:</strong>
+            <span *ngIf="cita.vehiculo?.color" class="color-dot" [ngStyle]="{ 'background-color': cita.vehiculo.color }"></span>
+            {{ cita.vehiculo?.color || 'N/A' }}
+          </p>
+          <p><strong>Precio:</strong> {{ cita.vehiculo?.precio ? ('$' + (cita.vehiculo.precio | number:'1.0-0') + ' ARS') : 'N/A' }}</p>
+        </div>
+      </div>
+      <p><strong>Sucursal:</strong> {{ cita.vendedor?.sucursal?.nombre || 'N/A' }}</p>
+      <p><strong>Dirección:</strong> {{ cita.vendedor?.sucursal?.direccion || 'N/A' }}</p>
+      <p><strong>Horario:</strong> {{ cita.vendedor?.sucursal?.horario_inicio || 'N/A' }} - {{ cita.vendedor?.sucursal?.horario_fin || 'N/A' }}</p>
+      <p><strong>Fecha / Hora:</strong> {{ cita.fecha_hora | date:'dd/MM/yyyy HH:mm' }}</p>
+      <p><strong>Motivo:</strong> {{ cita.motivo || 'N/D' }}</p>
+      <p><strong>Estado:</strong>
+        <span class="estado {{ cita.estado }}">
+          {{ cita.estado === 'pendiente' ? 'Pendiente' : cita.estado === 'confirmada' ? 'Confirmada' : cita.estado === 'cancelada' ? 'Cancelada' : cita.estado === 'finalizada' ? 'Finalizada' : (cita.estado || 'Desconocido') }}
+        </span>
+      </p>
+      <div class="actions">
+        <button *ngIf="cita.estado === 'confirmada'" class="btn-primary" type="button" (click)="finalizarCita(cita)" [disabled]="loading">
+          Marcar como Finalizada
+        </button>
+        <button class="btn-secondary" type="button" (click)="irConversacion(cita)">
+          Conversar con Cliente
+        </button>
+      </div>
+      <p *ngIf="cita.calificacion" class="comentario">Calificación: {{ cita.calificacion.puntuacion }} / 5</p>
+      <p *ngIf="cita.comentario" class="comentario">Nota interna: {{ cita.comentario }}</p>
+    </div>
+  </div>
+</div>

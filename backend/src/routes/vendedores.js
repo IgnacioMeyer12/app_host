@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const vendedoresController = require('../controllers/vendedoresController');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 // Todas las rutas requieren autenticación
-router.use(auth);
+router.use(authenticateToken);
 
 // Obtener todos los vendedores
 router.get('/', vendedoresController.getAll);
@@ -13,7 +13,7 @@ router.get('/', vendedoresController.getAll);
 router.get('/sucursal/:idSucursal', vendedoresController.getBySucursal);
 
 // Crear vendedor (solo admin)
-router.post('/', auth, (req, res, next) => {
+router.post('/', authenticateToken, (req, res, next) => {
   if (req.user.rol !== 'admin') {
     return res.status(403).json({
       success: false,
@@ -24,7 +24,7 @@ router.post('/', auth, (req, res, next) => {
 }, vendedoresController.create);
 
 // Actualizar vendedor (solo admin)
-router.put('/:id', auth, (req, res, next) => {
+router.put('/:id', authenticateToken, (req, res, next) => {
   if (req.user.rol !== 'admin') {
     return res.status(403).json({
       success: false,
@@ -35,7 +35,7 @@ router.put('/:id', auth, (req, res, next) => {
 }, vendedoresController.update);
 
 // Eliminar vendedor (solo admin)
-router.delete('/:id', auth, (req, res, next) => {
+router.delete('/:id', authenticateToken, (req, res, next) => {
   if (req.user.rol !== 'admin') {
     return res.status(403).json({
       success: false,

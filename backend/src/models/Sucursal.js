@@ -24,6 +24,18 @@ const Sucursal = sequelize.define('Sucursal', {
     allowNull: true,
     comment: 'Teléfono de contacto'
   },
+  horario_inicio: {
+    type: DataTypes.STRING(5),
+    allowNull: false,
+    defaultValue: '09:00',
+    comment: 'Horario de apertura HH:mm'
+  },
+  horario_fin: {
+    type: DataTypes.STRING(5),
+    allowNull: false,
+    defaultValue: '18:00',
+    comment: 'Horario de cierre HH:mm'
+  },
   latitud: {
     type: DataTypes.DECIMAL(12, 8),
     allowNull: false,
@@ -39,6 +51,12 @@ const Sucursal = sequelize.define('Sucursal', {
     defaultValue: true,
     allowNull: false,
     comment: 'Si la sucursal está activa'
+  },
+  testdrive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false,
+    comment: 'Si la sucursal permite test drives'
   }
 }, {
   tableName: 'sucursales',

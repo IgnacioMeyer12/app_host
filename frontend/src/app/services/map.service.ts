@@ -19,6 +19,7 @@ export class MapService {
   private leafletLoaded = false; // Controla si Leaflet ya se cargó
   private mapInitialized = false; // Controla si el mapa ya está listo
   private currentMarker: any = null; // Marcador actual (seleccionado)
+  private onSucursalClick: ((sucursal: any) => void) | null = null; // Callback cuando se selecciona sucursal
   private resizeTimeout: any = null;  // Timeout para recálculo de tamaño
 
   constructor() { }
@@ -54,6 +55,8 @@ export class MapService {
         this.map = L.map(elementId, {
           center: [latitude, longitude],
           zoom: 16,
+          maxZoom: 21,
+          minZoom: 1,
           zoomControl: true,
           fadeAnimation: true,
           zoomAnimation: true,
@@ -65,14 +68,16 @@ export class MapService {
           touchZoom: true,
           doubleClickZoom: true,
           boxZoom: true,
-          closePopupOnClick: false
+          closePopupOnClick: false,
+          zoomSnap: 0.5,
+          zoomDelta: 0.5
         });
 
         // PASO 4: Agregar capa base (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           subdomains: 'abc',
-          maxZoom: 13,
+          maxZoom: 21,
           minZoom: 1,
           tileSize: 256,
           zoomOffset: 0,
@@ -290,12 +295,22 @@ export class MapService {
       keepInView: true
     });
 
+    marker.on('click', () => {
+      if (this.onSucursalClick) {
+        this.onSucursalClick(sucursal);
+      }
+    });
+
     this.markers.push(marker);
   }
 
   /**
    * Agrega múltiples sucursales al mapa de una vez
    */
+  setOnSucursalClick(handler: (sucursal: any) => void): void {
+    this.onSucursalClick = handler;
+  }
+
   addSucursales(sucursales: any[]): void {
     if (!this.map) return;
     sucursales.forEach(sucursal => this.addSucursalMarker(sucursal));

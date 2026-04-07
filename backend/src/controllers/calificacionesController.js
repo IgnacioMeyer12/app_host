@@ -1,4 +1,4 @@
-const { Calificacion, Cita, Vendedor, Usuario } = require('../models');
+const { Calificacion, Cita, Vendedor, Cliente, Sucursal } = require('../models');
 const { Op } = require('sequelize');
 
 class CalificacionesController {
@@ -24,10 +24,18 @@ class CalificacionesController {
       }
 
       // Verificar que la cita existe y pertenece al cliente
+      const cliente = await require('../models').Cliente.findOne({ where: { dni: dniCliente, activo: true } });
+      if (!cliente) {
+        return res.status(404).json({
+          success: false,
+          message: 'Cliente no encontrado o inactivo'
+        });
+      }
+
       const cita = await Cita.findOne({
         where: {
           id: idCita,
-          dni: dniCliente
+          idCliente: cliente.id
         },
         include: [
           {
@@ -73,6 +81,15 @@ class CalificacionesController {
         comentario: comentario || null
       });
 
+      // Actualizar promedio y total de calificaciones del vendedor
+      const todas = await Calificacion.findAll({ where: { idVendedor: cita.idVendedor } });
+      const total = todas.length;
+      const promedio = total > 0 ? (todas.reduce((acc, c) => acc + c.puntuacion, 0) / total) : 0;
+      await Vendedor.update({
+        puntuacionPromedio: Math.round(promedio * 10) / 10,
+        totalCalificaciones: total
+      }, { where: { id: cita.idVendedor } });
+
       res.status(201).json({
         success: true,
         message: 'Calificación creada exitosamente',
@@ -101,8 +118,8 @@ class CalificacionesController {
             as: 'cita',
             include: [
               {
-                model: Usuario,
-                as: 'usuario',
+                model: Cliente,
+                as: 'cliente',
                 attributes: ['nombre', 'apellido']
               }
             ]
@@ -118,6 +135,50 @@ class CalificacionesController {
 
     } catch (error) {
       console.error('Error obteniendo calificaciones:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error del servidor'
+      });
+    }
+  }
+
+  // Obtener calificaciones del vendedor logueado (vendedor)
+  async getMyCalificaciones(req, res) {
+    try {
+      const dni = req.user.dni;
+      const vendedor = await Vendedor.findOne({ where: { dni, activo: true } });
+      if (!vendedor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vendedor no encontrado o inactivo'
+        });
+      }
+
+      const calificaciones = await Calificacion.findAll({
+        where: { idVendedor: vendedor.id },
+        include: [
+          {
+            model: Cita,
+            as: 'cita',
+            include: [
+              {
+                model: Cliente,
+                as: 'cliente',
+                attributes: ['nombre', 'apellido']
+              }
+            ]
+          }
+        ],
+        order: [['fecha', 'DESC']]
+      });
+
+      res.json({
+        success: true,
+        calificaciones
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo calificaciones del vendedor:', error);
       res.status(500).json({
         success: false,
         message: 'Error del servidor'
@@ -143,11 +204,6 @@ class CalificacionesController {
         where: whereCondition,
         include: [
           {
-            model: Usuario,
-            as: 'usuario',
-            attributes: ['dni', 'nombre', 'apellido']
-          },
-          {
             model: Sucursal,
             as: 'sucursal',
             attributes: ['id', 'nombre']
@@ -161,35 +217,41 @@ class CalificacionesController {
       });
 
       // Calcular estadísticas para cada vendedor
-      const ranking = vendedores.map(vendedor => {
-        const calificaciones = vendedor.calificaciones || [];
-        const totalCalificaciones = calificaciones.length;
-        const promedio = totalCalificaciones > 0
-          ? calificaciones.reduce((sum, cal) => sum + cal.puntuacion, 0) / totalCalificaciones
-          : 0;
+      const ranking = vendedores
+        .filter(vendedor => vendedor.sucursal)
+        .map(vendedor => {
+          const calificaciones = vendedor.calificaciones || [];
+          const totalCalificaciones = calificaciones.length;
+          const promedio = totalCalificaciones > 0
+            ? calificaciones.reduce((sum, cal) => sum + cal.puntuacion, 0) / totalCalificaciones
+            : 0;
 
-        return {
-          id: vendedor.id,
-          nombre: `${vendedor.usuario.nombre} ${vendedor.usuario.apellido}`,
-          sucursal: vendedor.sucursal.nombre,
-          totalCalificaciones,
-          promedio: Math.round(promedio * 10) / 10, // Redondear a 1 decimal
-          calificaciones: calificaciones.map(cal => ({
-            puntuacion: cal.puntuacion,
-            comentario: cal.comentario,
-            fecha: cal.fecha
-          }))
-        };
-      });
+          return {
+            id: vendedor.id,
+            nombre: `${vendedor.nombre} ${vendedor.apellido}`,
+            sucursal: vendedor.sucursal ? vendedor.sucursal.nombre : 'Sin sucursal',
+            totalCalificaciones,
+            promedio: Math.round(promedio * 10) / 10,
+            calificaciones: calificaciones.map(cal => ({
+              puntuacion: cal.puntuacion,
+              comentario: cal.comentario,
+              fecha: cal.fecha
+            }))
+          };
+        });
 
-      // Filtrar por mínimo de calificaciones y ordenar por promedio
-      const rankingFiltrado = ranking
-        .filter(v => v.totalCalificaciones >= minCalificaciones)
-        .sort((a, b) => b.promedio - a.promedio);
+      // Ordenar por promedio de mayor a menor
+      const rankingOrdenado = ranking.sort((a, b) => b.promedio - a.promedio);
 
-      res.json({
+      const result = rankingOrdenado.map(v => ({
+        ...v,
+        cumplioMinimo: v.totalCalificaciones >= Number(minCalificaciones)
+      }));
+
+      return res.json({
         success: true,
-        ranking: rankingFiltrado
+        ranking: result,
+        message: result.length === 0 ? 'No hay vendedores para mostrar aún' : 'Ranking cargado correctamente'
       });
 
     } catch (error) {

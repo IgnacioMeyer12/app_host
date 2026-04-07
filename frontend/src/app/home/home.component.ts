@@ -26,6 +26,10 @@ import { SucursalesService } from '../services/sucursales.service'; // Servicio 
   styleUrls: ['./home.component.css']              // Estilos del componente
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
+    // Navega al ranking de vendedores
+    verTopVendedores() {
+      this.router.navigate(['/top-vendedores']);
+    }
   // ============================================
   // PROPIEDADES DE ESTADO
   // ============================================
@@ -38,6 +42,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   isAdmin = false;                 // Indica si el usuario tiene rol admin
   mapInitialized = false;          // Controla si el mapa ya se inicializó
   mapError = false;                // Controla si hubo error al cargar mapa
+  serverOnline = true;             // Controla si el backend responde
+
+  sucursales: any[] = [];          // Lista de sucursales cargadas
+  selectedSucursal: any = null;    // Sucursal seleccionada en el mapa
 
   // ============================================
   // COORDENADAS EXACTAS DE LA CONCESIONARIA
@@ -74,6 +82,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 
     this.checkLoginStatus(); // Verifica si hay sesión activa en localStorage
+    this.checkServerStatus(); // Verifica que el backend esté online
     this.refrescarSucursales(); // Recarga sucursales (para detectar cambios)
   }
 
@@ -161,7 +170,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (response) => {
           if (response.success && response.sucursales?.length > 0) {
             console.log(`📍 Cargando ${response.sucursales.length} sucursales en el mapa`);
+            this.sucursales = response.sucursales;
+            this.mapService.setOnSucursalClick((sucursal: any) => this.selectSucursal(sucursal));
             this.mapService.addSucursales(response.sucursales);
+            if (!this.selectedSucursal && response.sucursales.length > 0) {
+              this.selectSucursal(response.sucursales[0]);
+            }
           }
         },
         error: (error) => {
@@ -169,6 +183,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
     }, 300);
+  }
+
+  selectSucursal(sucursal: any): void {
+    if (!sucursal) return;
+    this.selectedSucursal = sucursal;
+    this.mapService.setView(parseFloat(sucursal.latitud), parseFloat(sucursal.longitud), 16);
+  }
+
+  getSucursalField(field: string, fallback: string): string {
+    if (this.selectedSucursal && this.selectedSucursal[field]) {
+      return String(this.selectedSucursal[field]);
+    }
+    return fallback;
   }
 
   /**
@@ -255,6 +282,22 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
+   * Verifica que el backend esté disponible vía endpoint de healthcheck
+   */
+  checkServerStatus(): void {
+    this.http.get<any>('http://localhost:3001/api/health').subscribe({
+      next: () => {
+        this.serverOnline = true;
+      },
+      error: (error) => {
+        console.error('Error al verificar estado del servidor:', error);
+        this.serverOnline = false;
+        this.showToast('No se puede conectar al servidor backend', 'error');
+      }
+    });
+  }
+
+  /**
    * Procesa el formulario de login
    * Envía credenciales al backend y maneja la respuesta
    */
@@ -265,12 +308,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       
       const loginData = this.loginForm.value;
       
-      this.http.post('http://localhost:3001/api/login', loginData).subscribe({
+      this.http.post('http://localhost:3001/api/auth/login', loginData).subscribe({
         next: (response: any) => {
           this.loading = false;
           
           if (response.success) {
-            // Guardar usuario en localStorage para mantener sesión
+            // Guardar token y usuario en localStorage para mantener sesión
+            localStorage.setItem('token', response.token);
             localStorage.setItem('currentUser', JSON.stringify(response.user));
             this.currentUser = response.user;
             this.isLoggedIn = true;
@@ -319,18 +363,23 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /**
    * Llena el formulario con credenciales de ejemplo (útil para pruebas)
-   * @param type 'admin' o 'client' - qué tipo de usuario cargar
+   * @param type 'admin', 'cliente' o 'vendedor' - qué tipo de usuario cargar
    */
-  fillDemoCredentials(type: 'admin' | 'client'): void {
+  fillDemoCredentials(type: 'admin' | 'cliente' | 'vendedor'): void {
     if (type === 'admin') {
       this.loginForm.patchValue({
         dni: '12345678',
         password: 'admin123'
       });
-    } else {
+    } else if (type === 'cliente') {
       this.loginForm.patchValue({
         dni: '87654321',
         password: 'cliente123'
+      });
+    } else if (type === 'vendedor') {
+      this.loginForm.patchValue({
+        dni: '11111111',
+        password: 'vendedor123'
       });
     }
     this.errorMessage = '';
@@ -375,29 +424,124 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   // Redirigen a los diferentes componentes de la aplicación
   // ============================================
   
-  /** Navega al catálogo de vehículos */
+  private showAuthError(message: string): void {
+    this.showToast(message, 'error');
+  }
+
+  private requireLogin(): boolean {
+    if (!this.isLoggedIn || !this.currentUser) {
+      this.showAuthError('Debes iniciar sesión para usar esta opción');
+      this.router.navigate(['/']);
+      return false;
+    }
+    return true;
+  }
+
+  private requireRole(role: string): boolean {
+    if (!this.requireLogin()) {
+      return false;
+    }
+    if (this.currentUser?.rol !== role) {
+      this.showAuthError('No tienes permisos para acceder a esta opción');
+      return false;
+    }
+    return true;
+  }
+
+  /** Navega al catálogo de vehículos (abierto) */
   verVehiculos(): void { this.router.navigate(['/catalogo']); }
-  
-  /** Navega al panel de administración de vehículos */
-  administrarVehiculos(): void { this.router.navigate(['/administrar-vehiculos']); }
-  
-  /** Navega al formulario de solicitud de cita */
-  realizarCita(): void { this.router.navigate(['/cita']); }
-  
+
+  /** Navega al catálogo desde panel admin */
+  administrarVehiculos(): void { this.router.navigate(['/catalogo']); }
+
+  /** Navega al panel de administración de vendedores */
+  administrarVendedores(): void {
+    if (this.requireRole('admin')) {
+      this.router.navigate(['/administrar-vendedores']);
+    }
+  }
+
+  /** Navega al panel de administración de marcas */
+  administrarMarcas(): void {
+    if (this.requireRole('admin')) {
+      this.router.navigate(['/administrar-marcas']);
+    }
+  }
+
+  /** Navega al formulario de solicitud de cita (cliente) */
+  realizarCita(): void {
+    if (this.requireRole('cliente')) {
+      this.router.navigate(['/cita']);
+    }
+  }
+
   /** Navega a la lista de citas del cliente */
-  verMisCitas(): void { this.router.navigate(['/mis-citas']); }
-  
+  verMisCitas(): void {
+    if (this.requireRole('cliente')) {
+      this.router.navigate(['/mis-citas']);
+    }
+  }
+
+  /** Navega a las citas asignadas del vendedor */
+  verVendedorCitas(): void {
+    if (this.requireRole('vendedor')) {
+      this.router.navigate(['/vendedor-citas']);
+    }
+  }
+
+  /** Navega a las calificaciones del vendedor */
+  verMisCalificaciones(): void {
+    if (this.requireRole('vendedor')) {
+      this.router.navigate(['/vendedor-calificaciones']);
+    }
+  }
+
+  /** Navega a las conversaciones de vendedor/cliente */
+  verMisConversaciones(): void {
+    if (this.requireLogin()) {
+      const rol = this.currentUser?.rol;
+      if (rol === 'vendedor' || rol === 'cliente') {
+        this.router.navigate(['/vendedor-conversaciones']);
+      } else {
+        this.showAuthError('No tienes permiso para ver conversaciones');
+      }
+    }
+  }
+
   /** Navega al registro de administradores (solo admin) */
-  darAltaAdmin(): void { this.router.navigate(['/register'], { queryParams: { as: 'admin' } }); }
-  
+  darAltaAdmin(): void {
+    if (this.requireRole('admin')) {
+      this.router.navigate(['/register'], { queryParams: { as: 'admin' } });
+    }
+  }
+
+  /** Navega al registro de vendedores (solo admin) */
+  darAltaVendedor(): void {
+    if (this.requireRole('admin')) {
+      this.router.navigate(['/register'], { queryParams: { as: 'vendedor' } });
+    }
+  }
+
   /** Navega a la gestión de citas (solo admin) */
-  verCitas(): void { this.router.navigate(['/citas']); }
-  
+  verCitas(): void {
+    if (this.requireRole('admin')) {
+      this.router.navigate(['/citas']);
+    }
+  }
+
   /** Navega al formulario de alta de vehículos (solo admin) */
-  darAltaVehiculo(): void { this.router.navigate(['/alta-vehiculo']); }
-  
+  darAltaVehiculo(): void {
+    if (this.requireRole('admin')) {
+      this.router.navigate(['/alta-vehiculo']);
+    }
+  }
+
   /** Navega a la gestión de sucursales (solo admin) */
-  administrarSucursales(): void { this.router.navigate(['/administrar-sucursales']); }
+  administrarSucursales(): void {
+    if (this.requireRole('admin')) {
+      this.router.navigate(['/administrar-sucursales']);
+    }
+  }
 
   /**
    * Maneja errores de carga de imágenes (carga una imagen por defecto)

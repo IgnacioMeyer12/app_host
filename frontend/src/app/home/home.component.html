@@ -22,7 +22,7 @@
       <div class="logo-section">
         <div class="header-titles">
           <h1 class="header-title">Automotores Meyer</h1>
-          <h2 class="header-subtitle">Amenabar 2469 · Tel: 341 383 8911 · ignacioarielmeyer&#64;gmail.com</h2>
+          <h2 class="header-subtitle">{{ selectedSucursal?.nombre || 'Amenabar 2469' }} · {{ getSucursalField('telefono', '+54 9 341 383 8911') }} · {{ getSucursalField('email', 'ignacioarielmeyer@gmail.com') }}</h2>
         </div>
       </div>
 
@@ -202,8 +202,6 @@
             <!-- SECCIÓN DEMO - Credenciales de prueba -->
             <div class="demo-section">
               <div class="demo-header">
-                <h4 class="demo-title">Acceso de Prueba</h4>
-                <p class="demo-subtitle">Puedes probar la plataforma con estos usuarios</p>
               </div>
 
               <div class="demo-cards">
@@ -223,7 +221,17 @@
                   <div class="demo-card-content">
                     <div class="demo-field"><span class="demo-label">DNI:</span><span class="demo-value">87654321</span></div>
                     <div class="demo-field"><span class="demo-label">Contraseña:</span><span class="demo-value">cliente123</span></div>
-                    <button class="btn-copy" (click)="fillDemoCredentials('client')">Usar estas credenciales</button>
+                    <button class="btn-copy" (click)="fillDemoCredentials('cliente')">Usar estas credenciales</button>
+                  </div>
+                </div>
+
+                <!-- Tarjeta Vendedor -->
+                <div class="demo-card seller">
+                  <div class="demo-card-header"><span class="demo-role">Vendedor</span></div>
+                  <div class="demo-card-content">
+                    <div class="demo-field"><span class="demo-label">DNI:</span><span class="demo-value">11111111</span></div>
+                    <div class="demo-field"><span class="demo-label">Contraseña:</span><span class="demo-value">vendedor123</span></div>
+                    <button class="btn-copy" (click)="fillDemoCredentials('vendedor')">Usar estas credenciales</button>
                   </div>
                 </div>
               </div>
@@ -268,43 +276,98 @@
               <p class="card-description">Revisa el estado de tus solicitudes de cita</p>
               <button class="card-btn" (click)="verMisCitas()">Mis Citas</button>
             </div>
+
+            <div class="dashboard-card warning">
+              <div class="card-icon"><i class="fas fa-comments"></i></div>
+              <h3 class="card-title">Conversaciones</h3>
+              <p class="card-description">Chatea con tu vendedor y consulta detalles de citas</p>
+              <button class="card-btn" (click)="verMisConversaciones()">Ver Conversaciones</button>
+            </div>
+          </div>
+
+          <!-- Tarjetas para vendedores -->
+          <div *ngIf="currentUser?.rol === 'vendedor'" class="dashboard-cards">
+            <div class="dashboard-card success">
+              <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
+              <h3 class="card-title">Mis Citas</h3>
+              <p class="card-description">Revisa todas las citas asignadas a ti</p>
+              <button class="card-btn" (click)="verVendedorCitas()">Ver Mis Citas</button>
+            </div>
+
+            <div class="dashboard-card info">
+              <div class="card-icon"><i class="fas fa-star"></i></div>
+              <h3 class="card-title">Calificaciones</h3>
+              <p class="card-description">Revisa tus puntajes y reseñas de clientes</p>
+              <button class="card-btn" (click)="verMisCalificaciones()">Ver Calificaciones</button>
+            </div>
+
+            <div class="dashboard-card warning">
+              <div class="card-icon"><i class="fas fa-comments"></i></div>
+              <h3 class="card-title">Conversaciones</h3>
+              <p class="card-description">Comunícate con tus clientes sobre citas</p>
+              <button class="card-btn" (click)="verMisConversaciones()">Ver Conversaciones</button>
+            </div>
           </div>
 
           <!-- Tarjetas para administradores -->
           <div *ngIf="currentUser?.rol === 'admin'" class="dashboard-cards">
             <div class="dashboard-card warning">
               <div class="card-icon"><i class="fas fa-user-shield"></i></div>
-              <h3 class="card-title">Dar de Alta Admin</h3>
-              <p class="card-description">Registra nuevos administradores para gestionar la concesionaria</p>
+              <h3 class="card-title">Dar de Alta Administrador</h3>
+              <p class="card-description">Registra nuevos administradores para gestionar toda la aplicación</p>
               <button class="card-btn" (click)="darAltaAdmin()">Crear Administrador</button>
             </div>
-
-            <div class="dashboard-card info">
-              <div class="card-icon"><i class="fas fa-file-alt"></i></div>
-              <h3 class="card-title">Ver Citas</h3>
-              <p class="card-description">Gestiona todas las citas programadas por los clientes</p>
-              <button class="card-btn" (click)="verCitas()">Ver Citas Programadas</button>
+            <div class="dashboard-card warning">
+              <div class="card-icon"><i class="fas fa-user-tie"></i></div>
+              <h3 class="card-title">Dar de Alta Vendedor</h3>
+              <p class="card-description">Registra nuevos vendedores asociados a sucursal</p>
+              <button class="card-btn" (click)="darAltaVendedor()">Crear Vendedor</button>
             </div>
 
             <div class="dashboard-card primary">
               <div class="card-icon"><i class="fas fa-plus"></i></div>
               <h3 class="card-title">Dar de Alta Vehículo</h3>
               <p class="card-description">Agrega nuevos vehículos a nuestro catálogo exclusivo</p>
-              <button class="card-btn" (click)="darAltaVehiculo()">Agregar Vehículo</button>
+              <button class="card-btn" (click)="darAltaVehiculo()">Crear Vehículo</button>
             </div>
-
-            <div class="dashboard-card secondary">
-              <div class="card-icon"><i class="fas fa-tools"></i></div>
-              <h3 class="card-title">Administrar Vehículos</h3>
-              <p class="card-description">Gestiona el inventario de vehículos desde el panel de administración</p>
-              <button class="card-btn" (click)="administrarVehiculos()">Ir a Vehículos</button>
+            <div class="dashboard-card info">
+              <div class="card-icon"><i class="fas fa-file-alt"></i></div>
+              <h3 class="card-title">Administrar Citas</h3>
+              <p class="card-description">Gestiona todas las citas programadas por los clientes</p>
+              <button class="card-btn" (click)="verCitas()">Ver Citas Programadas</button>
             </div>
-
-            <div class="dashboard-card success">
+             <div class="dashboard-card success">
               <div class="card-icon"><i class="fas fa-building"></i></div>
               <h3 class="card-title">Administrar Sucursales</h3>
               <p class="card-description">Gestiona las sucursales y sus ubicaciones en el mapa</p>
-              <button class="card-btn" (click)="administrarSucursales()">Ir a Sucursales</button>
+              <button class="card-btn" (click)="administrarSucursales()">Ver Sucursales</button>
+            </div>
+            <div class="dashboard-card warning">
+              <div class="card-icon"><i class="fas fa-users"></i></div>
+              <h3 class="card-title">Administrar Vendedores</h3>
+              <p class="card-description">Gestiona los vendedores y su información desde el panel de administración</p>
+              <button class="card-btn" (click)="administrarVendedores()">Ver Vendedores</button>
+            </div>
+            <div class="dashboard-card secondary">
+              <div class="card-icon"><i class="fas fa-tags"></i></div>
+              <h3 class="card-title">Administrar Marcas</h3>
+              <p class="card-description">Alta, edición, borrado y listado de marcas</p>
+              <button class="card-btn" (click)="administrarMarcas()">Ver Marcas</button>
+            </div>
+                 <div class="dashboard-card secondary">
+              <div class="card-icon"><i class="fas fa-car-side"></i></div>
+              <h3 class="card-title">Catálogo de Vehículos</h3>
+              <p class="card-description">Edita y Explora los vehículos disponibles</p>
+              <button class="card-btn" (click)="administrarVehiculos()">Ver Catálogo</button>
+            </div>
+
+
+            <!-- Tarjeta Top Vendedores -->
+            <div class="dashboard-card info">
+              <div class="card-icon"><i class="fas fa-trophy"></i></div>
+              <h3 class="card-title">Top Vendedores</h3>
+              <p class="card-description">Ranking de vendedores destacados por calificaciones</p>
+              <button class="card-btn" (click)="verTopVendedores()">Ver Ranking</button>
             </div>
           </div>
 
@@ -353,8 +416,8 @@
               <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
               <div class="info-text">
                 <h3>Dirección</h3>
-                <p>Amenabar 2469</p>
-                <p>Rosario, Santa Fe</p>
+                <p>{{ getSucursalField('direccion', 'Amenabar 2469') }}</p>
+                <p>{{ getSucursalField('ciudad', 'Rosario, Santa Fe') }}</p>
               </div>
             </div>
 
@@ -362,8 +425,8 @@
               <div class="info-icon"><i class="fas fa-phone-alt"></i></div>
               <div class="info-text">
                 <h3>Teléfono</h3>
-                <p>+54 9 341 383 8911</p>
-                <p>Lunes a Viernes: 9:00 - 18:00</p>
+                <p>{{ getSucursalField('telefono', '+54 9 341 383 8911') }}</p>
+                <p>{{ getSucursalField('horario', 'Lunes a Viernes: 9:00 - 18:00') }}</p>
               </div>
             </div>
 
@@ -396,7 +459,7 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-content">
-        <p>&copy; {{ currentYear }} Automotores Meyer · Amenabar 2469 · Tel: 341 383 8911 · ignacioarielmeyer&#64;gmail.com</p>
+        <p>&copy; {{ currentYear }} Automotores Meyer · {{ getSucursalField('direccion', 'Amenabar 2469') }} · {{ getSucursalField('telefono', '341 383 8911') }} · {{ getSucursalField('email', 'ignacioarielmeyer@gmail.com') }}</p>
       </div>
     </div>
   </footer>

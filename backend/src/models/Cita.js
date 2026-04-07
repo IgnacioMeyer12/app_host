@@ -9,15 +9,35 @@ const Cita = sequelize.define('Cita', {
     allowNull: false,
     comment: 'ID único de la cita'
   },
-  dni: {
-    type: DataTypes.STRING(20),
+  idCliente: {
+    type: DataTypes.INTEGER,
     allowNull: false,
-    comment: 'DNI del cliente que agendó'
+    field: 'id_cliente',
+    references: {
+      model: 'clientes',
+      key: 'id'
+    },
+    comment: 'ID del cliente que agendó'
   },
   idVehiculo: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.INTEGER,
     allowNull: true,
+    field: 'id_vehiculo',
+    references: {
+      model: 'vehiculos',
+      key: 'id_vehiculo'
+    },
     comment: 'ID del vehículo (opcional)'
+  },
+  idSucursal: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'id_sucursal',
+    references: {
+      model: 'sucursales',
+      key: 'id'
+    },
+    comment: 'ID de la sucursal asociada a la cita'
   },
   fecha_hora: {
     type: DataTypes.DATE,
@@ -35,10 +55,17 @@ const Cita = sequelize.define('Cita', {
     allowNull: false,
     comment: 'Estado de la cita'
   },
-  admin_dni: {
-    type: DataTypes.STRING(20),
+  // admin_dni is kept only for backwards compatibility but is no longer used as main field
+  // in tickets / appointment workflow. Use idAdministrador instead.
+  idAdministrador: {
+    type: DataTypes.INTEGER,
     allowNull: true,
-    comment: 'DNI del admin que respondió'
+    field: 'id_administrador',
+    references: {
+      model: 'administradores',
+      key: 'id'
+    },
+    comment: 'ID del administrador que respondió'
   },
   admin_message: {
     type: DataTypes.TEXT,

@@ -20,7 +20,7 @@
     <!-- ============================================
          BOTÓN VOLVER
          ============================================ -->
-    <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
+    <button class="btn btn-back-menu" routerLink="/">← Volver al menú</button>
     
     <!-- ============================================
          TÍTULO DE LA PÁGINA
@@ -36,16 +36,17 @@
            CAMPO: MARCA
            ============================================ -->
       <div class="form-group">
-        <label for="marca">Marca</label>
-        <input 
-          type="text" 
-          id="marca" 
-          formControlName="marca"
-          placeholder="Ingrese la marca"
-          [class.error]="isFieldInvalid('marca')">
-        <div class="error-message" *ngIf="isFieldInvalid('marca')">
+        <label for="idMarca">Marca</label>
+        <select id="idMarca" formControlName="idMarca" [class.error]="isFieldInvalid('idMarca')">
+          <option value="">Seleccione una marca</option>
+          <option *ngFor="let marca of marcas" [value]="marca.id">
+            {{ marca.nombre }} - {{ marca.descripcion || 'Sin descripción' }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="isFieldInvalid('idMarca')">
           La marca es obligatoria
         </div>
+        <small *ngIf="marcas.length === 0">No hay marcas registradas. Cargue una marca antes de crear el vehículo.</small>
       </div>
 
       <!-- ============================================
@@ -78,6 +79,20 @@
                   (click)="selectColor(c)" 
                   [class.active]="vehiculoForm.get('color')?.value === c">
           </button>
+        </div>
+      </div>
+
+      <!-- ============================================
+           CAMPO: SUCURSAL
+           ============================================ -->
+      <div class="form-group">
+        <label for="idSucursal">Sucursal</label>
+        <select id="idSucursal" formControlName="idSucursal" [class.error]="isFieldInvalid('idSucursal')">
+          <option value="">Seleccione una sucursal</option>
+          <option *ngFor="let s of sucursales" [value]="s.id">{{ s.nombre }} {{ s.direccion ? ' - '+ s.direccion : '' }}</option>
+        </select>
+        <div class="error-message" *ngIf="isFieldInvalid('idSucursal')">
+          La sucursal es obligatoria
         </div>
       </div>
 
@@ -258,7 +273,8 @@
 
         <!-- Columna de información -->
         <div class="vehicle-info">
-          <p><strong>Marca:</strong> {{ previewVehicle.marca }}</p>
+          <p><strong>Marca:</strong> {{ previewVehicle.marcaTexto || '-' }}</p>
+          <p *ngIf="previewVehicle.marcaDescripcion"><strong>Descripción de Marca:</strong> {{ previewVehicle.marcaDescripcion }}</p>
           <p><strong>Modelo:</strong> {{ previewVehicle.modelo }}</p>
           <p><strong>Año:</strong> {{ previewVehicle.anio }}</p>
           <p><strong>Precio:</strong> {{ formatCurrency(previewVehicle.precio) }}</p>
@@ -275,11 +291,13 @@
     </div>
 
     <!-- ============================================
-         MENSAJES DE ÉXITO O ERROR
+         MENSAJES DE ÉXITO O ERROR + BOTÓN VOLVER
          ============================================ -->
-    <div *ngIf="message" 
-         [class]="messageType === 'success' ? 'message success' : 'message error'">
-      {{ message }}
+    <div *ngIf="showFeedback" class="feedback-container">
+      <div [class]="messageType === 'success' ? 'message success' : 'message error'">
+        {{ message }}
+      </div>
+      <button class="btn btn-back-menu" (click)="irInicio()">← Volver al menú</button>
     </div>
   </div>
 </div>

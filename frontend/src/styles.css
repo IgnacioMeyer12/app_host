@@ -52,6 +52,43 @@
 }
 
 /* ===================================
+   BOTÓN VOLVER AL MENÚ - UNIFICADO
+   =================================== */
+.btn-back-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.575rem 1rem;
+  background-color: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-back-menu:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: var(--primary-light);
+  transform: translateX(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-back-menu:active {
+  transform: translateX(0) scale(0.98);
+}
+
+.btn-back-menu svg,
+.btn-back-menu i {
+  width: 1em;
+  height: 1em;
+  stroke-width: 2;
+}
+
+/* ===================================
    ANIMACIONES AVANZADAS
    =================================== */
 @keyframes fadeIn {

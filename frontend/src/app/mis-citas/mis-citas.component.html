@@ -1,61 +1,96 @@
 <!-- ============================================
-     VISTA MIS CITAS (mis-citas.component.html)
-     ============================================
-     Muestra la interfaz donde el usuario puede ver todas sus citas agendadas.
+     VISTA MIS CITAS (cliente) - Formato consistente con vendedor
      ============================================ -->
+<div class="container">
+  <!-- Botón para volver al menú principal -->
+  <button class="btn-back-menu" style="margin-bottom: 1rem;" routerLink="/">← Volver al menú</button>
 
-<!-- Contenedor principal de la página -->
-<div class="mis-citas-container">
-  
-  <!-- Botón para volver al menú principal (usa routerLink para navegar sin recargar) -->
-  <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
-  
-  <!-- Título de la página -->
   <h2>Mis Citas</h2>
 
-  <!-- Mensaje mientras se cargan los datos desde el servidor -->
-  <div *ngIf="loading">Cargando...</div>
-  
-  <!-- Mensaje de error si algo salió mal -->
-  <div *ngIf="message" class="message error">{{ message }}</div>
+  <!-- Estado de carga -->
+  <div *ngIf="loading" class="loading">Cargando citas...</div>
 
-  <!-- 
-    TABLA DE CITAS - Solo se muestra si:
-    1. No está cargando (!loading)
-    2. Hay citas para mostrar (citas y citas.length)
-  -->
-  <table *ngIf="!loading && citas && citas.length" class="citas-table">
-    <!-- Encabezados de la tabla -->
-    <thead>
-      <tr>
-        <th>ID</th>                    <!-- Número identificador de la cita -->
-        <th>Vehículo</th>               <!-- Marca, modelo y año del vehículo -->
-        <th>Fecha / Hora</th>           <!-- Cuándo está agendada la cita -->
-        <th>Motivo</th>                 <!-- Razón de la cita (service, reparación, etc) -->
-        <th>Estado</th>                  <!-- Pendiente, aceptada o rechazada -->
-        <th>Mensaje admin</th>           <!-- Comentario del administrador (si hay) -->
-      </tr>
-    </thead>
-    
-    <!-- Cuerpo de la tabla: recorre cada cita y crea una fila por cada una -->
-    <tbody>
-      <tr *ngFor="let c of citas">       <!-- *ngFor: repite esta fila por cada cita -->
-        <td>{{ c.id }}</td>               <!-- Muestra el ID de la cita -->
-        <td>{{ c.marca }} {{ c.modelo }} ({{ c.anio }})</td> <!-- Vehículo completo -->
-        <td>{{ c.fecha_hora }}</td>       <!-- Fecha y hora de la cita -->
-        <td>{{ c.motivo }}</td>           <!-- Motivo de la cita -->
-        <td>{{ mapEstado(c.estado) }}</td> <!-- Estado traducido (usa la función del .ts) -->
-        <td>{{ c.admin_message || '-' }}</td> <!-- Mensaje del admin o guión si no hay -->
-      </tr>
-    </tbody>
-  </table>
+  <!-- Mensaje de error o información -->
+  <div *ngIf="message && !loading" class="message">{{ message }}</div>
 
-  <!-- 
-    Mensaje cuando no hay citas:
-    Se muestra si no está cargando Y (no hay citas O el array está vacío)
-  -->
-  <div *ngIf="!loading && (!citas || citas.length === 0)">
+  <!-- Mensaje cuando no hay citas -->
+  <div *ngIf="!loading && (!citas || citas.length === 0)" class="message">
     No tienes citas programadas.
   </div>
-  
-</div> 
+
+  <!-- Grid de cards (mismo que en vendedor) -->
+  <div *ngIf="!loading && citas && citas.length > 0" class="grid">
+    <div *ngFor="let c of citas" class="card">
+      <!-- Datos del cliente (titular) -->
+      <!-- Datos del vendedor -->
+      <p><strong>Vendedor:</strong> {{ c.vendedor?.nombre || c.vendedor?.usuario?.nombre || (c.idVendedor ? ('ID ' + c.idVendedor) : '-') }} {{ c.vendedor?.apellido || c.vendedor?.usuario?.apellido || '' }}</p>
+
+      <!-- Información del vehículo (con foto si existe) -->
+      <div class="vehiculo-info">
+        <ng-container *ngIf="c.vehiculo?.fotos && c.vehiculo.fotos.length > 0; else sinFoto">
+          <img [src]="c.vehiculo.fotos[0]" alt="Foto vehículo" class="vehiculo-img" />
+        </ng-container>
+        <ng-template #sinFoto>
+          <div class="vehiculo-img-placeholder">Sin foto</div>
+        </ng-template>
+        <div>
+          <p><strong>Vehículo:</strong> {{ c.vehiculo?.marca?.nombre || c.marca || 'Vehículo desconocido' }} {{ c.vehiculo?.modelo || c.modelo || '' }} ({{ c.vehiculo?.anio || c.anio || '-' }})</p>
+          <p><strong>Color:</strong>
+            <span *ngIf="c.vehiculo?.color" class="color-dot" [ngStyle]="{ 'background-color': c.vehiculo.color }"></span>
+            {{ c.vehiculo?.color || 'N/A' }}
+          </p>
+          <p><strong>Precio:</strong> {{ c.vehiculo?.precio ? ('$' + (c.vehiculo.precio | number:'1.0-0') + ' ARS') : 'N/A' }}</p>
+        </div>
+      </div>
+
+      <!-- Sucursal y dirección (desde el vendedor o desde la cita) -->
+      <p><strong>Sucursal:</strong> {{ c.sucursal?.nombre || c.vendedor?.sucursal?.nombre || c.vehiculo?.sucursal?.nombre || (c.idSucursal ? ('ID ' + c.idSucursal) : 'N/A') }}</p>
+      <p><strong>Dirección:</strong> {{ c.sucursal?.direccion || c.vendedor?.sucursal?.direccion || 'N/A' }}</p>
+      <p><strong>Horario:</strong> {{ c.sucursal?.horario_inicio || c.vendedor?.sucursal?.horario_inicio || 'N/A' }} - {{ c.sucursal?.horario_fin || c.vendedor?.sucursal?.horario_fin || 'N/A' }}</p>
+
+      <!-- Fecha y motivo -->
+      <p><strong>Fecha / Hora:</strong> {{ formatDateTime(c.fecha_hora) }}</p>
+      <p><strong>Motivo:</strong> {{ c.motivo || 'N/D' }}</p>
+
+      <!-- Estado con badge y mensajes nuevos -->
+      <p>
+        <strong>Estado:</strong>
+        <span class="estado {{ c.estado }}">
+          {{ mapEstado(c.estado) }}
+        </span>
+        <!-- Badge de mensajes nuevos (estilo consistente) -->
+        <span *ngIf="c.unreadMessages > 0" class="estado" style="background: #fef3c7; color: #92400e; margin-left: 0.5rem;">
+          📬 {{ c.unreadMessages }} nuevo(s)
+        </span>
+      </p>
+
+      <!-- Mensaje del administrador si existe -->
+      <p *ngIf="c.admin_message"><strong>Mensaje admin:</strong> {{ c.admin_message }}</p>
+
+      <!-- Bloque de calificación (si la cita está finalizada y no calificada) -->
+      <div *ngIf="c.estado === 'finalizada' && !c.calificacion" class="calificacion-box" style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+        <label><strong>Puntuar vendedor:</strong></label>
+        <select [(ngModel)]="ratingForm[c.id].puntuacion" style="margin-left: 0.5rem; padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <option [ngValue]="null">--</option>
+          <option *ngFor="let n of [1,2,3,4,5]" [value]="n">{{n}}</option>
+        </select>
+        <input type="text" [(ngModel)]="ratingForm[c.id].comentario" placeholder="Comentario opcional" style="margin-left: 0.5rem; padding: 0.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border);" />
+        <button class="btn-secondary" type="button" (click)="rateCita(c)" style="margin-left: 0.5rem;">Enviar</button>
+      </div>
+      <div *ngIf="c.calificacion" class="comentario" style="margin-top: 0.5rem;">
+        Calificación: {{ c.calificacion.puntuacion }} / 5
+        <span *ngIf="c.calificacion.comentario"> - {{ c.calificacion.comentario }}</span>
+      </div>
+
+      <!-- Acciones: conversar con vendedor -->
+      <div class="actions">
+        <button class="btn-primary" type="button" (click)="abrirConversacion(c)">
+          💬 Conversar con vendedor
+        </button>
+      </div>
+
+      <!-- Nota interna (comentario de la cita) -->
+      <p *ngIf="c.comentario" class="comentario">Nota interna: {{ c.comentario }}</p>
+    </div>
+  </div>
+</div>

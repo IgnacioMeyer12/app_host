@@ -15,6 +15,9 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { SucursalesService, Sucursal } from '../services/sucursales.service';
+import { MarcasService, Marca } from '../services/marcas.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-alta-vehiculo',
@@ -32,8 +35,19 @@ export class AltaVehiculoComponent implements OnInit {
   loading = false;
   message = '';
   messageType: 'success' | 'error' = 'success';
+  showFeedback = false;
   currentYear = new Date().getFullYear();
   createdVehicle: any = null;
+
+  // ============================================
+  // PROPIEDADES DE MARCAS
+  // ============================================
+  marcas: Marca[] = [];
+
+  // ============================================
+  // PROPIEDADES DE SUCURSALES
+  // ============================================
+  sucursales: Sucursal[] = [];
 
   // ============================================
   // PROPIEDADES DE IMÁGENES
@@ -59,7 +73,10 @@ export class AltaVehiculoComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private sucursalesService: SucursalesService,
+    private marcasService: MarcasService,
+    private notificationService: NotificationService
   ) {
     this.vehiculoForm = this.createForm();
   }
@@ -67,7 +84,39 @@ export class AltaVehiculoComponent implements OnInit {
   // ============================================
   // ngOnInit
   // ============================================
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.cargarSucursales();
+    this.cargarMarcas();
+  }
+
+  // ============================================
+  // cargarSucursales - Trae sucursales para selector
+  // ============================================
+  cargarSucursales(): void {
+    this.sucursalesService.getSucursalesTodas().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.sucursales = res.sucursales;
+        }
+      },
+      error: () => {
+        console.error('No se pudieron cargar sucursales para el formulario de alta de vehículo.');
+      }
+    });
+  }
+
+  cargarMarcas(): void {
+    this.marcasService.getAll().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.marcas = res.marcas;
+        }
+      },
+      error: () => {
+        console.error('No se pudieron cargar las marcas para el formulario de alta de vehículo.');
+      }
+    });
+  }
 
   // ============================================
   // toggle0km - Maneja el checkbox "Es 0km"
@@ -116,7 +165,7 @@ export class AltaVehiculoComponent implements OnInit {
   // ============================================
   createForm(): FormGroup {
     return this.fb.group({
-      marca: ['', [Validators.required]],
+      idMarca: [null, [Validators.required]],
       modelo: ['', [Validators.required]],
       anio: ['', [
         Validators.required,
@@ -133,6 +182,7 @@ export class AltaVehiculoComponent implements OnInit {
       ]],
       es0km: [false],
       stock: [null],
+      idSucursal: [null, Validators.required],
       color: ['#000000'],
       descripcion: ['']
     });
@@ -304,8 +354,9 @@ export class AltaVehiculoComponent implements OnInit {
           this.loading = false;
           
           if (response.success) {
-            this.message = 'Vehículo registrado exitosamente';
+            this.message = this.notificationService.success('Vehículo registrado exitosamente');
             this.messageType = 'success';
+            this.showFeedback = true;
             this.createdVehicle = response.vehiculo || null;
             
             // Limpiar formulario y preview
@@ -316,6 +367,7 @@ export class AltaVehiculoComponent implements OnInit {
           } else {
             this.message = response.message || 'Error al registrar el vehículo';
             this.messageType = 'error';
+            this.showFeedback = true;
           }
         },
         error: (error) => {
@@ -330,6 +382,7 @@ export class AltaVehiculoComponent implements OnInit {
             this.message = 'Error de conexión. Verifique su conexión a internet.';
           }
           this.messageType = 'error';
+          this.showFeedback = true;
         }
       });
   }
@@ -349,8 +402,12 @@ export class AltaVehiculoComponent implements OnInit {
     const formValue = this.vehiculoForm.value;
     const es0 = this.vehiculoForm.get('es0km')?.value;
 
+    const selectedMarca = this.marcas.find(m => m.id === Number(formValue.idMarca));
+
     return {
-      marca: formValue.marca,
+      idMarca: Number(formValue.idMarca),
+      marcaTexto: selectedMarca ? selectedMarca.nombre : '',
+      marcaDescripcion: selectedMarca ? selectedMarca.descripcion : '',
       modelo: formValue.modelo,
       anio: parseInt(formValue.anio),
       precio: Math.round(parseFloat(formValue.precio) * 100) / 100,
@@ -359,6 +416,7 @@ export class AltaVehiculoComponent implements OnInit {
       descripcion: formValue.descripcion || '',
       color: formValue.color,
       stock: es0 ? parseInt(formValue.stock) || 0 : 0,
+      idSucursal: formValue.idSucursal || null,
       es0km: es0
     };
   }
@@ -392,10 +450,10 @@ export class AltaVehiculoComponent implements OnInit {
   }
 
   // ============================================
-  // irInicio - Navega a home
+  // irInicio - Navega a inicio
   // ============================================
   irInicio(): void {
-    this.router.navigate(['/home']);
+    this.router.navigate(['/']);
   }
 
   // ============================================

@@ -1,55 +1,105 @@
-const { Vendedor, Usuario, Sucursal } = require('../models');
+const { Vendedor, Sucursal, Calificacion, Cliente, Administrador } = require('../models');
 
 class VendedoresController {
-  // Obtener todos los vendedores
-  async getAll(req, res) {
-    try {
-      const vendedores = await Vendedor.findAll({
-        include: [
-          {
-            model: Usuario,
-            as: 'usuario',
-            attributes: ['dni', 'nombre', 'apellido', 'telefono']
-          },
-          {
-            model: Sucursal,
-            as: 'sucursal',
-            attributes: ['id', 'nombre', 'direccion']
-          }
-        ],
-        where: { activo: true }
-      });
+// Obtener todos los vendedores
+async getAll(req, res) {
+  try {
+    const vendedoresRaw = await Vendedor.findAll({
+      include: [
+        {
+          model: Sucursal,
+          as: 'sucursal',
+          attributes: ['id', 'nombre', 'direccion']
+        },
+        {
+          model: Calificacion,
+          as: 'calificaciones',
+          required: false
+        }
+      ]
+      // Eliminar la línea: where: { activo: true }
+    });
 
-      res.json({
-        success: true,
-        vendedores
-      });
-    } catch (error) {
-      console.error('Error obteniendo vendedores:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error del servidor'
-      });
-    }
+    const vendedores = vendedoresRaw.map(vendedor => {
+      const calificaciones = vendedor.calificaciones || [];
+      const totalCalificaciones = calificaciones.length;
+      const promedio = totalCalificaciones > 0
+        ? calificaciones.reduce((sum, c) => sum + c.puntuacion, 0) / totalCalificaciones
+        : 0;
+
+      return {
+        id: vendedor.id,
+        dni: vendedor.dni,
+        nombre: vendedor.nombre,
+        apellido: vendedor.apellido,
+        telefono: vendedor.telefono,
+        idSucursal: vendedor.idSucursal,
+        activo: vendedor.activo,
+        fecha_creacion: vendedor.fecha_creacion,
+        fecha_actualizacion: vendedor.fecha_actualizacion,
+        sucursal: vendedor.sucursal,
+        totalCalificaciones,
+        puntuacionPromedio: Math.round(promedio * 10) / 10
+      };
+    });
+
+    res.json({
+      success: true,
+      vendedores
+    });
+  } catch (error) {
+    console.error('Error obteniendo vendedores:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error del servidor'
+    });
   }
+}
 
   // Obtener vendedores por sucursal
   async getBySucursal(req, res) {
     try {
       const { idSucursal } = req.params;
 
-      const vendedores = await Vendedor.findAll({
+      const vendedoresRaw = await Vendedor.findAll({
         where: {
           idSucursal,
           activo: true
         },
         include: [
           {
-            model: Usuario,
-            as: 'usuario',
-            attributes: ['dni', 'nombre', 'apellido', 'telefono']
+            model: Sucursal,
+            as: 'sucursal',
+            attributes: ['id', 'nombre', 'direccion'],
+            required: false
+          },
+          {
+            model: Calificacion,
+            as: 'calificaciones',
+            required: false
           }
         ]
+      });
+
+      const vendedores = vendedoresRaw.map(vendedor => {
+        const calificaciones = vendedor.calificaciones || [];
+        const totalCalificaciones = calificaciones.length;
+        const promedio = totalCalificaciones > 0
+          ? calificaciones.reduce((sum, c) => sum + c.puntuacion, 0) / totalCalificaciones
+          : 0;
+
+        return {
+          id: vendedor.id,
+          dni: vendedor.dni,
+          nombre: vendedor.nombre,
+          apellido: vendedor.apellido,
+          telefono: vendedor.telefono,
+          idSucursal: vendedor.idSucursal,
+          activo: vendedor.activo,
+          sucursal: vendedor.sucursal,
+          totalCalificaciones,
+          puntuacionPromedio: Math.round(promedio * 10) / 10
+        };
       });
 
       res.json({
@@ -68,7 +118,7 @@ class VendedoresController {
   // Crear vendedor
   async create(req, res) {
     try {
-      const { dni, idSucursal } = req.body;
+      const { dni, idSucursal, nombre, apellido, telefono } = req.body;
 
       // Validaciones
       if (!dni || !idSucursal) {
@@ -78,28 +128,10 @@ class VendedoresController {
         });
       }
 
-      // Verificar que el usuario existe y es vendedor
-      const usuario = await Usuario.findByPk(dni);
-      if (!usuario) {
-        return res.status(404).json({
-          success: false,
-          message: 'Usuario no encontrado'
-        });
-      }
-
-      if (usuario.rol !== 'vendedor') {
+      if (!nombre || !apellido || !telefono) {
         return res.status(400).json({
           success: false,
-          message: 'El usuario debe tener rol de vendedor'
-        });
-      }
-
-      // Verificar que la sucursal existe
-      const sucursal = await Sucursal.findByPk(idSucursal);
-      if (!sucursal) {
-        return res.status(404).json({
-          success: false,
-          message: 'Sucursal no encontrada'
+          message: 'Nombre, apellido y teléfono son obligatorios'
         });
       }
 
@@ -112,10 +144,32 @@ class VendedoresController {
         });
       }
 
+      // Verificar que el usuario está registrado como cliente o administrador (si aplica)
+      const existingCliente = await Cliente.findOne({ where: { dni } });
+      const existingAdmin = await Administrador.findOne({ where: { dni } });
+      if (!existingCliente && !existingAdmin) {
+        return res.status(404).json({
+          success: false,
+          message: 'El usuario no está registrado en el sistema'
+        });
+      }
+
+      // Verificar que la sucursal existe
+      const sucursal = await Sucursal.findByPk(idSucursal);
+      if (!sucursal) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sucursal no encontrada'
+        });
+      }
+
       // Crear vendedor
       const vendedor = await Vendedor.create({
         dni,
         idSucursal,
+        nombre,
+        apellido,
+        telefono,
         activo: true
       });
 
@@ -138,7 +192,7 @@ class VendedoresController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { idSucursal, activo } = req.body;
+      const { idSucursal, activo, nombre, apellido, telefono } = req.body;
 
       const vendedor = await Vendedor.findByPk(id);
       if (!vendedor) {
@@ -162,6 +216,16 @@ class VendedoresController {
 
       if (activo !== undefined) {
         vendedor.activo = activo;
+      }
+
+      if (nombre !== undefined) {
+        vendedor.nombre = nombre;
+      }
+      if (apellido !== undefined) {
+        vendedor.apellido = apellido;
+      }
+      if (telefono !== undefined) {
+        vendedor.telefono = telefono;
       }
 
       await vendedor.save();
@@ -211,5 +275,6 @@ class VendedoresController {
     }
   }
 }
+
 
 module.exports = new VendedoresController();

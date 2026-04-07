@@ -13,13 +13,19 @@
        BOTÓN VOLVER
        ============================================ -->
   <!-- BOTÓN VOLVER: Navega a home con routerLink="/" -->
-  <button class="btn btn-outline" routerLink="/">← Volver al menú</button>
+  <button class="btn btn-back-menu" routerLink="/">← Volver al menú</button>
   
   <!-- ============================================
        TÍTULO DE LA PÁGINA
        ============================================ -->
   <h2>Registrarse</h2>
   
+  <!-- MENSAJE DE RESULTADO (exitoso/ error) -->
+  <div *ngIf="showFeedback" class="feedback-container">
+    <div [class]="messageType === 'success' ? 'message success' : 'message error'">{{ message }}</div>
+    <button class="btn btn-back-menu" (click)="goToMenu()">← Volver al menú</button>
+  </div>
+
   <!-- ============================================
        CONTENIDO PRINCIPAL
        ============================================ -->
@@ -51,9 +57,13 @@
             </div>
             
             <!-- Título dinámico: cambia según el modo (adminMode) -->
-            <h2 class="card-title">{{ adminMode ? 'Dar de Alta Administrador' : 'Crear Cuenta Premium' }}</h2>
+            <h2 class="card-title">
+              {{ adminMode ? (roleToCreate === 'vendedor' ? 'Dar de Alta Vendedor' : 'Dar de Alta Administrador') : 'Crear Cuenta Premium' }}
+            </h2>
             <!-- Subtítulo dinámico -->
-            <p class="card-subtitle">{{ adminMode ? 'Crea una nueva cuenta de administrador' : 'Completá tus datos para acceder a beneficios exclusivos' }}</p>
+            <p class="card-subtitle">
+              {{ adminMode ? (roleToCreate === 'vendedor' ? 'Crea una nueva cuenta de vendedor' : 'Crea una nueva cuenta de administrador') : 'Completá tus datos para acceder a beneficios exclusivos' }}
+            </p>
           </div>
 
           <!-- ============================================

@@ -11,7 +11,7 @@
   <!-- ============================================
        BOTÓN VOLVER
        ============================================ -->
-  <button class="btn btn-back" routerLink="/">
+  <button class="btn btn-back-menu" routerLink="/">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
@@ -24,6 +24,9 @@
   <div class="header-section">
     <h2>Gestión de Citas</h2>
     <p class="subtitle">Administración y seguimiento de solicitudes</p>
+    <button class="btn btn-primary" style="float:right;margin-top:1rem;" routerLink="/top-vendedores">
+       Top Vendedores
+    </button>
   </div>
 
   <!-- ============================================
@@ -97,8 +100,9 @@
             <tr>
               <th>ID</th>
               <th>Cliente</th>
-              <th>DNI</th>
               <th>Vehículo</th>
+              <th>Vendedor</th>
+              <th>Sucursal</th>
               <th>Fecha / Hora</th>
               <th>Motivo</th>
               <th>Estado</th>
@@ -109,15 +113,16 @@
             <!-- Recorre cada cita pendiente y crea una fila -->
             <tr *ngFor="let c of pendientes" class="table-row">
               <td class="cell-id">#{{ c.id }}</td>
-              <td class="cell-name">{{ c.nombre }} {{ c.apellido }}</td>
-              <td class="cell-dni">{{ c.dni }}</td>
+              <td class="cell-name">{{ c.cliente?.nombre || c.cliente?.usuario?.nombre || c.nombre || '-' }} {{ c.cliente?.apellido || c.cliente?.usuario?.apellido || c.apellido || '' }}</td>
               <td class="cell-vehicle">
                 <div class="vehicle-info">
-                  <span class="vehicle-brand">{{ c.marca }} {{ c.modelo }}</span>
-                  <span class="vehicle-year">({{ c.anio }})</span>
+                  <span class="vehicle-brand">{{ c.vehiculo?.marca?.nombre || c.marca || 'Vehículo no asignado' }} {{ c.vehiculo?.modelo || c.modelo || '' }}</span>
+                  <span class="vehicle-year">({{ c.vehiculo?.anio || c.anio || '-' }})</span>
                 </div>
               </td>
-              <td class="cell-datetime">{{ c.fecha_hora }}</td>
+              <td class="cell-vendedor">{{ getVendedorNombre(c) }}</td>
+              <td class="cell-sucursal">{{ getSucursalNombre(c) }}</td>
+              <td class="cell-datetime">{{ formatDateTime(c.fecha_hora) }}</td>
               <td class="cell-motivo">{{ c.motivo }}</td>
               <td class="cell-status">
                 <span class="status-pill pending">{{ mapEstado(c.estado) }}</span>
@@ -176,26 +181,30 @@
             <tr>
               <th>ID</th>
               <th>Cliente</th>
-              <th>DNI</th>
+              <th>Administrador</th>
               <th>Vehículo</th>
+              <th>Vendedor</th>
+              <th>Sucursal</th>
               <th>Fecha / Hora</th>
               <th>Motivo</th>
               <th>Estado</th>
-              <th>Respuesta Admin</th> <!-- Columna adicional: mensaje del admin -->
+              <th>Respuesta Admin</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let c of contestadas" class="table-row">
               <td class="cell-id">#{{ c.id }}</td>
-              <td class="cell-name">{{ c.nombre }} {{ c.apellido }}</td>
-              <td class="cell-dni">{{ c.dni }}</td>
+              <td class="cell-name">{{ c.cliente?.nombre || c.cliente?.usuario?.nombre || c.nombre || '-' }} {{ c.cliente?.apellido || c.cliente?.usuario?.apellido || c.apellido || '' }}</td>
+              <td class="cell-admin">{{ getAdministradorNombre(c) }}</td>
               <td class="cell-vehicle">
                 <div class="vehicle-info">
-                  <span class="vehicle-brand">{{ c.marca }} {{ c.modelo }}</span>
-                  <span class="vehicle-year">({{ c.anio }})</span>
+                  <span class="vehicle-brand">{{ c.vehiculo?.marca?.nombre || c.marca || 'Vehículo no asignado' }} {{ c.vehiculo?.modelo || c.modelo || '' }}</span>
+                  <span class="vehicle-year">({{ c.vehiculo?.anio || c.anio || '-' }})</span>
                 </div>
               </td>
-              <td class="cell-datetime">{{ c.fecha_hora }}</td>
+              <td class="cell-vendedor">{{ getVendedorNombre(c) }}</td>
+              <td class="cell-sucursal">{{ getSucursalNombre(c) }}</td>
+              <td class="cell-datetime">{{ formatDateTime(c.fecha_hora) }}</td>
               <td class="cell-motivo">{{ c.motivo }}</td>
               <td class="cell-status">
                 <!-- Badge de estado con clase dinámica según si es aceptada o rechazada -->

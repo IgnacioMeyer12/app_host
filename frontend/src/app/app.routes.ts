@@ -10,7 +10,13 @@ import { CitaComponent } from './cita/cita.component';                    /* Age
 import { CitasAdminComponent } from './citas-admin/citas-admin.component'; /* Admin: ver todas las citas */
 import { MisCitasComponent } from './mis-citas/mis-citas.component';       /* Usuario: ver sus citas */
 import { AdministrarSucursalesComponent } from './administrar-sucursales/administrar-sucursales.component';       /* Usuario: ver sus citas */
-import { AdministrarVehiculosComponent } from './administrar-vehiculos/administrar-vehiculos.component'; /* Gestión de vehículos */
+// AdministrarVehiculosComponent fue reemplazado por catálogo; route /administrar-vehiculos redirige a /catalogo
+import { AdministrarVendedoresComponent } from './administrar-vendedores/administrar-vendedores.component';
+import { VendedorCitasComponent } from './vendedor-citas/vendedor-citas.component';
+import { VendedorCalificacionesComponent } from './vendedor-calificaciones/vendedor-calificaciones.component';
+import { VendedorConversacionesComponent } from './vendedor-conversaciones/vendedor-conversaciones.component';
+import { AdministrarMarcasComponent } from './administrar-marcas/administrar-marcas.component';
+import { TopVendedoresComponent } from './top-vendedores/top-vendedores.component';
 
 /* DEFINICIÓN DE RUTAS */
 export const routes: Routes = [
@@ -30,7 +36,14 @@ export const routes: Routes = [
   { path: 'mis-citas', component: MisCitasComponent }, /* cliente sus citas */
   /* Ruta: /administrar-sucursales → muestra AdministrarSucursalesComponent (admin gestiona sucursales) */
   { path: 'administrar-sucursales', component: AdministrarSucursalesComponent }, /* admin gestiona sucursales */
-  /* Ruta: /administrar-vehiculos → muestra AdministrarVehiculosComponent (cliente/usuario gestiona vehículos) */
-  { path: 'administrar-vehiculos', component: AdministrarVehiculosComponent },
+  /* Ruta: /administrar-vendedores → muestra AdministrarVendedoresComponent (admin gestiona vendedores) */
+  { path: 'administrar-vendedores', component: AdministrarVendedoresComponent },
+  { path: 'vendedor-citas', component: VendedorCitasComponent },
+  { path: 'vendedor-calificaciones', component: VendedorCalificacionesComponent },
+  { path: 'vendedor-conversaciones', component: VendedorConversacionesComponent },
+  { path: 'administrar-marcas', component: AdministrarMarcasComponent },
+  { path: 'top-vendedores', component: TopVendedoresComponent },
+  /* Ruta obsoleta: /administrar-vehiculos → redirige a catálogo */
+  { path: 'administrar-vehiculos', redirectTo: 'catalogo', pathMatch: 'full' },
   { path: '**', redirectTo: '' }
 ];

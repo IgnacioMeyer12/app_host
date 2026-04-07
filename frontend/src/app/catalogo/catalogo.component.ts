@@ -12,11 +12,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';       // Para directivas *ngIf, *ngFor
 import { Router, RouterModule } from '@angular/router'; // Para navegación y routerLink
 import { HttpClient } from '@angular/common/http';    // Para peticiones HTTP
+import { FormsModule } from '@angular/forms';         // Para ngModel en formularios
 
 @Component({
   selector: 'app-catalogo',           // Etiqueta HTML: <app-catalogo>
   standalone: true,                    // Componente independiente
-  imports: [CommonModule, RouterModule], // Módulos que necesita
+  imports: [CommonModule, RouterModule, FormsModule], // Módulos que necesita
   templateUrl: './catalogo.component.html', // HTML del componente
   styleUrls: ['./catalogo.component.css']   // Estilos del componente
 })
@@ -28,8 +29,44 @@ export class CatalogoComponent implements OnInit {
   loading = false;         // Controla el estado de carga (spinner)
   error = '';              // Mensaje de error si algo falla
 
+  // Filtros de búsqueda
+  filters = {
+    marca: '',
+    modelo: '',
+    precioMin: '',
+    precioMax: '',
+    anioMin: '',
+    anioMax: '',
+    kmMin: '',
+    kmMax: '',
+    color: '',
+    idSucursal: '',
+    sucursalTestdrive: false,
+    vendedor: '',
+    tieneCitas: false,
+    tieneConversaciones: false,
+    sortBy: 'fecha_creacion',
+    sortOrder: 'DESC'
+  };
+
+  showFilters = false;     // Controla si mostrar el panel de filtros
+
   // Índice de imagen seleccionada por vehículo (para mostrar varias imágenes)
   selectedImageIndex: Record<string, number> = {};
+
+  sucursales: any[] = [];
+  isAdmin = false;
+  editVehicleId: string | null = null;
+  editVehicleData: any = {
+    idSucursal: null,
+    activo: true,
+    precio: null,
+    stock: null,
+    fotos: []
+  };
+  editPhotoUrl = '';
+  editMessage = '';
+  editError = '';
 
   // ============================================
   // CONSTRUCTOR - Inyecta dependencias
@@ -43,33 +80,88 @@ export class CatalogoComponent implements OnInit {
   // ngOnInit - Se ejecuta al iniciar el componente
   // ============================================
   ngOnInit(): void {
-    // Carga los vehículos apenas se abre la página
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      try {
+        const user = JSON.parse(currentUser);
+        this.isAdmin = user?.rol === 'admin';
+      } catch {
+        this.isAdmin = false;
+      }
+    }
+
+    // Carga las sucursales y vehículos apenas se abre la página
+    this.fetchSucursales();
     this.fetchVehicles();
   }
 
   // ============================================
-  // fetchVehicles - Obtiene los vehículos del backend
+  // fetchSucursales - Obtiene las sucursales para filtro
+  // ============================================
+  fetchSucursales(): void {
+    this.http.get('http://localhost:3001/api/sucursales').subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.sucursales = res.sucursales || [];
+        }
+      },
+      error: (err: any) => {
+        console.error('Error cargando sucursales:', err);
+      }
+    });
+  }
+
+  // ============================================
+  // fetchVehicles - Obtiene los vehículos del backend con filtros
   // ============================================
   fetchVehicles(): void {
     this.loading = true;  // Activa el spinner
     this.error = '';      // Limpia errores anteriores
 
-    // Petición GET al backend
-    this.http.get('http://localhost:3001/api/vehiculos').subscribe({
+    // Construir parámetros de consulta
+    const params: any = {};
+
+    if (this.filters.marca) params.marca = this.filters.marca;
+    if (this.filters.modelo) params.modelo = this.filters.modelo;
+    if (this.filters.precioMin) params.precioMin = this.filters.precioMin;
+    if (this.filters.precioMax) params.precioMax = this.filters.precioMax;
+    if (this.filters.anioMin) params.anioMin = this.filters.anioMin;
+    if (this.filters.anioMax) params.anioMax = this.filters.anioMax;
+    if (this.filters.kmMin) params.kmMin = this.filters.kmMin;
+    if (this.filters.kmMax) params.kmMax = this.filters.kmMax;
+    if (this.filters.color) params.color = this.filters.color;
+    if (this.filters.sucursalTestdrive) params.sucursalTestdrive = 'true';
+    if (this.filters.vendedor) params.vendedor = this.filters.vendedor;
+    if (this.filters.tieneCitas) params.tieneCitas = 'true';
+    if (this.filters.tieneConversaciones) params.tieneConversaciones = 'true';
+    if (this.filters.idSucursal) params.idSucursal = this.filters.idSucursal;
+    params.sortBy = this.filters.sortBy;
+    params.sortOrder = this.filters.sortOrder;
+
+    // Petición GET al backend con parámetros de búsqueda
+    const endpoint = 'http://localhost:3001/api/vehiculos/';
+
+    this.http.get(endpoint, { params }).subscribe({
       next: (resp: any) => {  // Si la petición es exitosa
+        console.log('fetchVehicles respuesta:', resp);
         this.loading = false;
-        
+
         if (resp && resp.success) {
           // Guarda los vehículos en la propiedad (o array vacío si no hay)
-          this.vehicles = resp.vehiculos || [];
+          this.vehicles = (resp.vehiculos || resp.vehicles || []).map((vehicle: any) => ({
+            ...vehicle,
+            fotos: this.parseFotos(vehicle.fotos)
+          }));
+          console.log('Vehículos actualizados:', this.vehicles.length);
         } else {
           // Si el backend devuelve error, muestra el mensaje
           this.error = resp.message || 'Error cargando vehículos';
         }
       },
       error: (err) => {  // Si hay error de conexión o servidor
+        console.error('Error en fetchVehicles:', err);
         this.loading = false;
-        
+
         if (err.status === 0) {
           // Error de conexión (servidor no disponible)
           this.error = 'No se puede conectar al servidor. Verifica que el backend esté en http://localhost:3001';
@@ -81,13 +173,17 @@ export class CatalogoComponent implements OnInit {
     });
   }
 
+  selectedVehicleDetails: any = null;
+
   // ============================================
-  // viewDetails - Muestra detalles básicos del vehículo
+  // viewDetails - Muestra todos los detalles del vehículo en panel detalle
   // ============================================
   viewDetails(vehicle: any): void {
-    // Por ahora solo muestra un alert con información básica
-    // En el futuro podría navegar a una página de detalles
-    alert(`${vehicle.marca} ${vehicle.modelo} (${vehicle.anio}) - Precio: ${this.formatCurrency(vehicle.precio)}`);
+    this.selectedVehicleDetails = vehicle;
+  }
+
+  cerrarDetalles(): void {
+    this.selectedVehicleDetails = null;
   }
 
   // ============================================
@@ -115,11 +211,174 @@ export class CatalogoComponent implements OnInit {
   }
 
   // ============================================
+  // parseFotos - Asegura que el valor de fotos sea un array de URLs
+  // ============================================
+  private parseFotos(fotos: any): string[] {
+    if (!fotos) return [];
+    if (Array.isArray(fotos)) return fotos;
+    if (typeof fotos === 'string') {
+      try {
+        const parsed = JSON.parse(fotos);
+        return Array.isArray(parsed) ? parsed : [fotos];
+      } catch {
+        return [fotos];
+      }
+    }
+    return [String(fotos)];
+  }
+
+  // ============================================
   // selectImage - Cambia la imagen principal mostrada en la tarjeta
   // ============================================
   selectImage(vehicle: any, index: number): void {
     if (!vehicle?.idVehiculo) return;
     this.selectedImageIndex[vehicle.idVehiculo] = index;
+  }
+
+  // ============================================
+  // ADMIN: inicio edición de vehículo
+  // ============================================
+  editVehicle(vehicle: any): void {
+    if (!this.isAdmin) return;
+
+    if (this.editVehicleId === vehicle.idVehiculo) {
+      // Cerrar modo edición si se clickea de nuevo
+      this.cancelEdit();
+      return;
+    }
+
+    this.editVehicleId = vehicle.idVehiculo;
+    this.editVehicleData = {
+      idSucursal: vehicle.idSucursal || null,
+      activo: vehicle.activo,
+      precio: vehicle.precio,
+      stock: vehicle.stock,
+      fotos: this.parseFotos(vehicle.fotos)
+    };
+    this.editPhotoUrl = '';
+    this.editMessage = '';
+    this.editError = '';
+  }
+
+  cancelEdit(): void {
+    this.editVehicleId = null;
+    this.editVehicleData = { idSucursal: null, activo: true };
+    this.editMessage = '';
+    this.editError = '';
+  }
+
+  saveEdit(): void {
+    if (!this.isAdmin || !this.editVehicleId) {
+      this.editError = 'Solo administradores pueden editar vehículos.';
+      return;
+    }
+
+    const payload: any = {
+      idSucursal: this.editVehicleData.idSucursal,
+      activo: this.editVehicleData.activo,
+      precio: this.editVehicleData.precio,
+      stock: this.editVehicleData.stock,
+      fotos: this.editVehicleData.fotos
+    };
+
+    this.http.put(`http://localhost:3001/api/vehiculos/${this.editVehicleId}`, payload).subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.editMessage = 'Vehículo actualizado exitosamente.';
+          this.editError = '';
+          this.cancelEdit();
+          this.fetchVehicles();
+          setTimeout(() => this.router.navigate(['/']), 1000);
+        } else {
+          this.editError = res.message || 'No se pudo actualizar el vehículo.';
+          this.editMessage = '';
+        }
+      },
+      error: (err: any) => {
+        this.editError = err.error?.message || 'Error al actualizar el vehículo.';
+        this.editMessage = '';
+      }
+    });
+  }
+
+  addPhotoUrl(): void {
+    const url = this.editPhotoUrl?.trim();
+    if (!url) {
+      this.editError = 'La URL de la imagen no puede quedar vacía.';
+      return;
+    }
+    this.editVehicleData.fotos = this.editVehicleData.fotos || [];
+    this.editVehicleData.fotos.push(url);
+    this.editPhotoUrl = '';
+    this.editError = '';
+  }
+
+  removePhoto(index: number): void {
+    if (!this.editVehicleData.fotos || index < 0 || index >= this.editVehicleData.fotos.length) {
+      return;
+    }
+    this.editVehicleData.fotos.splice(index, 1);
+  }
+
+  deleteVehicle(vehicle: any): void {
+    console.log('🚨 deleteVehicle LLAMADO con vehículo:', vehicle);
+    console.log('ID del vehículo:', vehicle?.idVehiculo);
+    if (!vehicle?.idVehiculo) {
+      console.error('❌ ERROR: Vehículo sin ID válido');
+      this.editError = 'Vehículo sin ID válido.';
+      return;
+    }
+
+    // Temporalmente sin confirmación para probar
+    // if (!confirm(`¿Estás seguro que querés eliminar el vehículo ${vehicle.marca?.nombre} ${vehicle.modelo}?`)) {
+    //   return;
+    // }
+
+    console.log('Procediendo con eliminación...');
+
+    console.log('Enviando DELETE request a:', `http://localhost:3001/api/vehiculos/${vehicle.idVehiculo}`);
+    this.http.delete(`http://localhost:3001/api/vehiculos/${vehicle.idVehiculo}`).subscribe({
+      next: (res: any) => {
+        console.log('Respuesta del DELETE:', res);
+        if (res && res.success) {
+          this.editMessage = 'Vehículo eliminado correctamente.';
+          this.editError = '';
+          this.cancelEdit();
+          console.log('Llamando fetchVehicles después de eliminación');
+          this.fetchVehicles();
+          setTimeout(() => this.router.navigate(['/']), 1000);
+        } else {
+          this.editError = res.message || 'No se pudo eliminar el vehículo.';
+          this.editMessage = '';
+        }
+      },
+      error: (err: any) => {
+        console.error('Error en DELETE request:', err);
+        this.editError = err.error?.message || 'Error al eliminar el vehículo.';
+        this.editMessage = '';
+      }
+    });
+    this.http.delete(`http://localhost:3001/api/vehiculos/${vehicle.idVehiculo}`).subscribe({
+      next: (res: any) => {
+        console.log('Respuesta del DELETE:', res);
+        if (res && res.success) {
+          this.editMessage = 'Vehículo eliminado correctamente.';
+          this.editError = '';
+          this.cancelEdit();
+          console.log('Llamando fetchVehicles después de eliminación');
+          this.fetchVehicles();
+          setTimeout(() => this.router.navigate(['/']), 1000);
+        } else {
+          this.editError = res.message || 'No se pudo eliminar el vehículo.';
+          this.editMessage = '';
+        }
+      },
+      error: (err: any) => {
+        console.error('Error en DELETE request:', err);
+        this.editError = err.error?.message || 'Error al eliminar el vehículo.';
+        this.editMessage = '';
+      }
+    });
   }
 
   // ============================================
@@ -164,5 +423,68 @@ export class CatalogoComponent implements OnInit {
         alert('No fue posible navegar a la pantalla de citas. Refresca la página e intenta nuevamente.');
       }
     });
+  }
+
+  // ============================================
+  // MÉTODOS DE FILTROS
+  // ============================================
+
+  // Aplicar filtros y buscar
+  applyFilters(): void {
+    this.fetchVehicles();
+  }
+
+  // Limpiar todos los filtros
+  clearFilters(): void {
+    this.filters = {
+      marca: '',
+      modelo: '',
+      precioMin: '',
+      precioMax: '',
+      anioMin: '',
+      anioMax: '',
+      kmMin: '',
+      kmMax: '',
+      color: '',
+      idSucursal: '',
+      sucursalTestdrive: false,
+      vendedor: '',
+      tieneCitas: false,
+      tieneConversaciones: false,
+      sortBy: 'fecha_creacion',
+      sortOrder: 'DESC'
+    };
+    this.fetchVehicles();
+  }
+
+  // Alternar visibilidad del panel de filtros
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
+  }
+
+  // Cambiar ordenamiento
+  changeSort(sortBy: string): void {
+    if (this.filters.sortBy === sortBy) {
+      // Si ya está ordenado por este campo, cambiar dirección
+      this.filters.sortOrder = this.filters.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+    } else {
+      this.filters.sortBy = sortBy;
+      this.filters.sortOrder = 'DESC'; // Por defecto descendente
+    }
+    this.fetchVehicles();
+  }
+
+  // Obtener texto del ordenamiento actual
+  getSortText(): string {
+    const fieldNames: { [key: string]: string } = {
+      'fecha_creacion': 'Fecha',
+      'precio': 'Precio',
+      'anio': 'Año',
+      'km': 'Kilometraje',
+      'modelo': 'Modelo'
+    };
+    const field = fieldNames[this.filters.sortBy] || 'Fecha';
+    const order = this.filters.sortOrder === 'ASC' ? '↑' : '↓';
+    return `${field} ${order}`;
   }
 }

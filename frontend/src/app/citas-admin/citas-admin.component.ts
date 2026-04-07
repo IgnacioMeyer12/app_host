@@ -96,53 +96,90 @@ export class CitasAdminComponent implements OnInit {
     if (!e) return 'Desconocido';
     const estado = e.toLowerCase();
     if (estado === 'pendiente') return 'Pendiente';
+    if (estado === 'confirmada') return 'Confirmada';
+    if (estado === 'cancelada') return 'Cancelada';
     if (estado === 'aceptada') return 'Aceptada';
     if (estado === 'rechazada') return 'Rechazada';
     return e;
+  }
+
+  getClienteNombre(cita: any): string {
+    const nombre = cita?.cliente?.nombre || cita?.cliente?.usuario?.nombre || cita?.cliente?.nombre || cita?.nombre || '';
+    const apellido = cita?.cliente?.apellido || cita?.cliente?.usuario?.apellido || cita?.cliente?.apellido || cita?.apellido || '';
+    return nombre || apellido ? `${nombre} ${apellido}`.trim() : 'Cliente no asignado';
+  }
+
+  getVendedorNombre(cita: any): string {
+    const nombre = cita?.vendedor?.nombre || cita?.vendedor?.usuario?.nombre || '';
+    const apellido = cita?.vendedor?.apellido || cita?.vendedor?.usuario?.apellido || '';
+    if (nombre || apellido) return `${nombre} ${apellido}`.trim();
+    return cita?.idVendedor ? `ID ${cita.idVendedor}` : 'Vendedor no asignado';
+  }
+
+  getAdministradorNombre(cita: any): string {
+    const nombre = cita?.administrador?.nombre || '';
+    const apellido = cita?.administrador?.apellido || '';
+    if (nombre || apellido) return `${nombre} ${apellido}`.trim();
+    return cita?.idAdministrador ? `ID ${cita.idAdministrador}` : 'Admin no asignado';
+  }
+
+  getSucursalNombre(cita: any): string {
+    if (cita?.sucursal?.nombre) return cita.sucursal.nombre;
+    if (cita?.vendedor?.sucursal?.nombre) return cita.vendedor.sucursal.nombre;
+    if (cita?.vehiculo?.sucursal?.nombre) return cita.vehiculo.sucursal.nombre;
+    return cita?.idSucursal ? `ID ${cita.idSucursal}` : 'Sucursal no asignada';
+  }
+
+  // formatDateTime - Muestra DD/MM/YYYY HH:mm en vez de ISO
+  // ============================================
+  formatDateTime(fechaHora: string | Date | undefined): string {
+    if (!fechaHora) return '-';
+
+    const d = new Date(fechaHora);
+    if (Number.isNaN(d.getTime())) return String(fechaHora);
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear());
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   }
 
   // ============================================
   // setEstado - Acepta o rechaza una cita
   // ============================================
   setEstado(cita: any, estado: 'aceptada' | 'rechazada') {
-    // PASO 1: Obtener datos del admin actual
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    
     let adminMessage = null;
-    
-    // PASO 2: Si es rechazo, pedir motivo (opcional)
     if (estado === 'rechazada') {
       adminMessage = prompt('Motivo del rechazo (opcional):');
-      if (adminMessage === null) {
-        return; // Usuario canceló el prompt
-      }
-      adminMessage = adminMessage.trim() || null; // Si está vacío, queda null
+      if (adminMessage === null) return;
+      adminMessage = adminMessage.trim() || null;
     }
-
-    // PASO 3: Preparar datos para enviar al backend
-    const body = { 
-      estado: estado,               // Nuevo estado (aceptada/rechazada)
-      adminDni: currentUser.dni,    // Quién está haciendo el cambio
-      adminMessage: adminMessage    // Mensaje (solo si es rechazo)
-    };
-
-    // PASO 4: Enviar PATCH al backend
-    this.http.patch(`http://localhost:3001/api/citas/${cita.id}`, body)
-      .subscribe({
-        next: (res: any) => {
-          if (res && res.success) {
-            alert(`✅ Cita ${estado} correctamente`);
-            
-            // PASO 5: Recargar todas las citas para actualizar la vista
-            this.cargarCitas();
-          } else {
-            alert(res?.message || 'Error al actualizar');
-          }
-        },
-        error: (err) => {
-          console.error('❌ Error:', err);
-          alert('Error al actualizar la cita');
+    let endpoint = '';
+    let body: any = {};
+    if (estado === 'aceptada') {
+      endpoint = `http://localhost:3001/api/citas/${cita.id}/confirmar`;
+      body = {};
+    } else if (estado === 'rechazada') {
+      endpoint = `http://localhost:3001/api/citas/${cita.id}/cancelar`;
+      body = { motivo: adminMessage };
+    }
+    this.http.put(endpoint, body).subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          alert(`✅ Cita ${estado === 'aceptada' ? 'aceptada' : 'rechazada'} correctamente`);
+          this.cargarCitas();
+        } else {
+          alert(res?.message || 'Error al actualizar');
         }
-      });
+      },
+      error: (err) => {
+        console.error('❌ Error:', err);
+        alert('Error al actualizar la cita');
+      }
+    });
   }
 }

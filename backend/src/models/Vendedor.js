@@ -6,32 +6,51 @@ const Vendedor = sequelize.define('Vendedor', {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
-    allowNull: false,
-    comment: 'ID único del vendedor'
+    allowNull: false
   },
   dni: {
     type: DataTypes.STRING(20),
     allowNull: false,
-    unique: true,
-    comment: 'DNI del usuario vendedor'
+    unique: true
   },
-  idSucursal: {
-    type: DataTypes.INTEGER,
+  nombre: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  apellido: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  telefono: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  password: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  rol: {
+    type: DataTypes.ENUM('vendedor'),
     allowNull: false,
-    comment: 'ID de la sucursal a la que pertenece'
+    defaultValue: 'vendedor'
   },
   activo: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+    allowNull: false
+  },
+  fecha_registro: {
+    type: DataTypes.DATE,
     allowNull: false,
-    comment: 'Si el vendedor está activo'
+    defaultValue: DataTypes.NOW
+  },
+  idSucursal: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   }
 }, {
   tableName: 'vendedores',
-  timestamps: true,
-  createdAt: 'fecha_creacion',
-  updatedAt: 'fecha_actualizacion',
-  comment: 'Tabla de vendedores'
+  timestamps: false
 });
 
 module.exports = Vendedor;

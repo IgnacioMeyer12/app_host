@@ -1,4 +1,4 @@
-const { Usuario, Vehiculo, Sucursal, Marca, Vendedor } = require('../models');
+const { Cliente, Administrador, Vehiculo, Sucursal, Marca, Vendedor } = require('../models');
 const bcrypt = require('bcryptjs');
 
 class DatabaseSeeder {
@@ -6,20 +6,18 @@ class DatabaseSeeder {
     try {
       console.log('🌱 Ejecutando seeders...');
 
-      // Crear usuarios por defecto
+
+      // Crear sucursal principal primero
+      await this.seedSucursales();
+
+      // Crear usuarios por defecto (usa la sucursal creada)
       await this.seedUsers();
 
       // Crear vehículos de ejemplo
       await this.seedVehicles();
 
-      // Crear sucursales de ejemplo
-      await this.seedSucursales();
-
       // Crear marcas de ejemplo
       await this.seedMarcas();
-
-      // Crear vendedores de ejemplo
-      await this.seedVendedores();
 
       console.log('✅ Seeders ejecutados exitosamente');
 
@@ -33,8 +31,12 @@ class DatabaseSeeder {
     const clientPassword = await bcrypt.hash('cliente123', 10);
     const vendedorPassword = await bcrypt.hash('vendedor123', 10);
 
-    // Usuario admin
-    await Usuario.findOrCreate({
+    // Buscar sucursal principal para asignar a los vendedores
+    const sucursalPrincipal = await Sucursal.findOne({ where: { nombre: 'Sucursal Principal' } });
+    const idSucursal = sucursalPrincipal ? sucursalPrincipal.id : 1;
+
+    // Administrador
+    await Administrador.findOrCreate({
       where: { dni: '12345678' },
       defaults: {
         dni: '12345678',
@@ -42,12 +44,13 @@ class DatabaseSeeder {
         apellido: 'Sistema',
         telefono: '3411234567',
         password: adminPassword,
-        rol: 'admin'
+        rol: 'admin',
+        activo: true
       }
     });
 
-    // Usuario cliente
-    await Usuario.findOrCreate({
+    // Cliente
+    await Cliente.findOrCreate({
       where: { dni: '87654321' },
       defaults: {
         dni: '87654321',
@@ -55,12 +58,13 @@ class DatabaseSeeder {
         apellido: 'Perez',
         telefono: '3417654321',
         password: clientPassword,
-        rol: 'cliente'
+        rol: 'cliente',
+        activo: true
       }
     });
 
-    // Usuarios vendedores
-    await Usuario.findOrCreate({
+    // Vendedores
+    await Vendedor.findOrCreate({
       where: { dni: '11111111' },
       defaults: {
         dni: '11111111',
@@ -68,11 +72,13 @@ class DatabaseSeeder {
         apellido: 'Rodriguez',
         telefono: '3411111111',
         password: vendedorPassword,
-        rol: 'vendedor'
+        rol: 'vendedor',
+        activo: true,
+        idSucursal
       }
     });
 
-    await Usuario.findOrCreate({
+    await Vendedor.findOrCreate({
       where: { dni: '22222222' },
       defaults: {
         dni: '22222222',
@@ -80,7 +86,9 @@ class DatabaseSeeder {
         apellido: 'Gonzalez',
         telefono: '3412222222',
         password: vendedorPassword,
-        rol: 'vendedor'
+        rol: 'vendedor',
+        activo: true,
+        idSucursal
       }
     });
 
@@ -93,33 +101,19 @@ class DatabaseSeeder {
   }
 
   async seedSucursales() {
-    // Sucursal 1
     await Sucursal.findOrCreate({
-      where: { nombre: 'Sucursal Centro' },
+      where: { nombre: 'Sucursal Principal' },
       defaults: {
-        nombre: 'Sucursal Centro',
-        direccion: 'Av. 7 de Marzo 1234',
-        telefono: '3411234567',
-        latitud: -31.4167,
-        longitud: -64.1833,
-        activa: true
+        nombre: 'Sucursal Principal',
+        direccion: 'Amenabar 2469',
+        telefono: '3413838911',
+        latitud: -32.9511, // valor de ejemplo
+        longitud: -60.6667, // valor de ejemplo
+        activa: true,
+        testdrive: true
       }
     });
-
-    // Sucursal 2
-    await Sucursal.findOrCreate({
-      where: { nombre: 'Sucursal Norte' },
-      defaults: {
-        nombre: 'Sucursal Norte',
-        direccion: 'Av. Colón 5678',
-        telefono: '3417654321',
-        latitud: -31.3833,
-        longitud: -64.1833,
-        activa: true
-      }
-    });
-
-    console.log('🏢 Sucursales de ejemplo creadas');
+    console.log('🏢 Sucursal Principal creada');
   }
 
   async seedMarcas() {
@@ -127,35 +121,7 @@ class DatabaseSeeder {
     console.log('🏷️ Marcas de ejemplo creadas');
   }
 
-  async seedVendedores() {
-    // Obtener sucursales
-    const sucursalCentro = await Sucursal.findOne({ where: { nombre: 'Sucursal Centro' } });
-    const sucursalNorte = await Sucursal.findOne({ where: { nombre: 'Sucursal Norte' } });
 
-    if (sucursalCentro && sucursalNorte) {
-      // Vendedor 1
-      await Vendedor.findOrCreate({
-        where: { dni: '11111111' },
-        defaults: {
-          dni: '11111111',
-          idSucursal: sucursalCentro.id,
-          activo: true
-        }
-      });
-
-      // Vendedor 2
-      await Vendedor.findOrCreate({
-        where: { dni: '22222222' },
-        defaults: {
-          dni: '22222222',
-          idSucursal: sucursalNorte.id,
-          activo: true
-        }
-      });
-    }
-
-    console.log('👨‍💼 Vendedores de ejemplo creados');
-  }
 
 }
 

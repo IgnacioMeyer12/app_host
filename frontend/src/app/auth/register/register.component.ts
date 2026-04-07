@@ -13,6 +13,7 @@ import { FormBuilder, FormGroup, Validators, AbstractControl, ReactiveFormsModul
 import { HttpClient } from '@angular/common/http'; // Para peticiones HTTP
 import { Router, RouterModule, ActivatedRoute } from '@angular/router'; // Para navegación y parámetros URL
 import { CommonModule } from '@angular/common'; // Para directivas *ngIf, *ngFor
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-register',                    // Etiqueta HTML: <app-register>
@@ -32,7 +33,12 @@ export class RegisterComponent implements OnInit {
   showPassword = false;            // Controla visibilidad del campo password
   showConfirmPassword = false;     // Controla visibilidad del campo confirmPassword
 
-  adminMode = false;               // Indica si estamos en modo registro de admin
+  adminMode = false;               // Indica si estamos en modo registro de admin/vendedor
+  roleToCreate: 'cliente' | 'admin' | 'vendedor' = 'cliente';
+
+  message = '';
+  messageType: 'success' | 'error' = 'success';
+  showFeedback = false;
 
   // ============================================
   // CONSTRUCTOR - Inyecta dependencias y configura formulario
@@ -41,7 +47,8 @@ export class RegisterComponent implements OnInit {
     private fb: FormBuilder,           // Para crear formularios reactivos
     private http: HttpClient,           // Para peticiones HTTP
     private router: Router,             // Para navegar entre páginas
-    private route: ActivatedRoute       // Para leer parámetros de la URL
+    private route: ActivatedRoute,      // Para leer parámetros de la URL
+    private notificationService: NotificationService
   ) {
     // Configura el formulario con validaciones
     this.registerForm = this.fb.group({
@@ -60,7 +67,8 @@ export class RegisterComponent implements OnInit {
   ngOnInit(): void {
     // Lee los parámetros de la URL (ej: ?as=admin)
     this.route.queryParams.subscribe((params: any) => {
-      if (params['as'] === 'admin') {
+      const requestedRole = params['as'];
+      if (requestedRole === 'admin' || requestedRole === 'vendedor') {
         // Modo admin: verificar que el usuario actual sea administrador
         const currentUser = localStorage.getItem('currentUser');
         if (!currentUser) {
@@ -70,11 +78,13 @@ export class RegisterComponent implements OnInit {
         }
         const user = JSON.parse(currentUser);
         if (user.rol !== 'admin') {
-          alert('Acceso denegado. Solo administradores pueden dar de alta otros admins.');
+          alert('Acceso denegado. Solo administradores pueden dar de alta admins o vendedores.');
           this.router.navigate(['/']);
           return;
         }
-        this.adminMode = true; // Activa el modo admin
+
+        this.adminMode = true;
+        this.roleToCreate = requestedRole;
       }
     });
   }
@@ -128,6 +138,22 @@ export class RegisterComponent implements OnInit {
     }
   }
 
+  private showError(msg: string): void {
+    this.messageType = 'error';
+    this.message = msg;
+    this.showFeedback = true;
+  }
+
+  private showSuccess(msg: string): void {
+    this.messageType = 'success';
+    this.message = msg;
+    this.showFeedback = true;
+  }
+
+  goToMenu(): void {
+    this.router.navigate(['/']);
+  }
+
   // ============================================
   // onRegister - Procesa el envío del formulario
   // ============================================
@@ -156,44 +182,50 @@ export class RegisterComponent implements OnInit {
       }
       
       // Agrega datos adicionales para el backend
-      payload.creatorDni = currentUser.dni; // Quién está creando este admin
-      payload.rol = 'admin';                 // Rol a asignar
+      payload.creatorDni = currentUser.dni; // Quién está creando este usuario
+      payload.rol = this.roleToCreate;      // Rol a asignar: admin o vendedor
 
       // Envía al mismo endpoint pero con datos de admin
-      this.http.post('http://localhost:3001/api/register', payload).subscribe({
+      this.http.post('http://localhost:3001/api/auth/register', payload).subscribe({
         next: (res: any) => {
           this.loading = false;
           if (res?.success) {
-            alert('Administrador creado correctamente');
-            this.router.navigate(['/']);
+            localStorage.setItem('token', res.token);
+            localStorage.setItem('currentUser', JSON.stringify(res.user));
+            this.showSuccess(this.notificationService.success('Administrador creado correctamente'));
+            setTimeout(() => this.router.navigate(['/']), 1000);
           } else {
-            alert(res.message || 'Error creando administrador');
+            this.showError(res.message || 'Error creando administrador');
           }
         },
         error: (err) => {
           this.loading = false;
-          alert(err.error?.message || 'Error del servidor');
+          this.showError(err.error?.message || 'Error del servidor');
         }
       });
 
     } else {
       // REGISTRO PÚBLICO (clientes)
-      this.http.post('http://localhost:3001/api/register', payload).subscribe({
+      this.http.post('http://localhost:3001/api/auth/register', payload).subscribe({
         next: (response: any) => {
           this.loading = false;
           if (response.success) {
-            alert('Registro exitoso. Ahora puedes iniciar sesión.');
-            this.router.navigate(['/']);
+            if (response.token && response.user) {
+              localStorage.setItem('token', response.token);
+              localStorage.setItem('currentUser', JSON.stringify(response.user));
+            }
+            this.showSuccess(this.notificationService.success('Registro exitoso'));
+            setTimeout(() => this.router.navigate(['/']), 1000);
           } else {
-            alert(response.message || 'Error en el registro');
+            this.showError(response.message || 'Error en el registro');
           }
         },
         error: (error) => {
           this.loading = false;
           if (error.status === 400) {
-            alert(error.error?.message || 'Error en el registro. Verifique los datos.');
+            this.showError(error.error?.message || 'Error en el registro. Verifique los datos.');
           } else {
-            alert('Error del servidor. Intente nuevamente.');
+            this.showError('Error del servidor. Intente nuevamente.');
           }
         }
       });

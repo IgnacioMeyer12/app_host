@@ -1,4 +1,4 @@
-const { Cita } = require('./models');
+const { Cita } = require('../models');
 
 // Función para finalizar citas automáticamente
 const finalizarCitasAutomaticamente = async () => {

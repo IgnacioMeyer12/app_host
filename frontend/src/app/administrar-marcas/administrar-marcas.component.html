@@ -1,0 +1,219 @@
+<!-- ============================================
+     VISTA ADMINISTRAR MARCAS (administrar-marcas.component.html)
+     ============================================
+     Panel de administración para gestionar marcas.
+     Incluye:
+     - Listado completo de marcas (activas e inactivas)
+     - Formulario para agregar/editar marcas
+     - Acciones: activar/desactivar, editar, eliminar
+     ============================================ -->
+
+<!-- CONTENEDOR PRINCIPAL -->
+<div class="administrar-marcas-container">
+  
+  <!-- TARJETA PRINCIPAL -->
+  <div class="administrar-marcas-card">
+    
+    <!-- ============================================
+         BOTÓN VOLVER
+         ============================================ -->
+    <button class="btn btn-back-menu" routerLink="/">← Volver al menú</button>
+    
+    <!-- ============================================
+         TÍTULO DE LA PÁGINA
+         ============================================ -->
+    <h2>Administrar Marcas</h2>
+    
+    <!-- ============================================
+         CONTENIDO PRINCIPAL
+         ============================================ -->
+    <main class="main-content">
+      
+      <!-- ============================================
+           MENSAJE DE ERROR (con animación)
+           ============================================ -->
+      @if (error) {
+        <div class="alert alert-error animate-slide-in">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      <!-- ============================================
+           MENSAJE DE ÉXITO (con animación)
+           ============================================ -->
+      @if (message) {
+        <div class="alert alert-success animate-slide-in">
+          <i class="fas fa-check-circle"></i>
+          <span>{{ message }}</span>
+        </div>
+      }
+
+      <!-- ============================================
+           INDICADOR DE CARGA (spinner)
+           ============================================ -->
+      @if (loading) {
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Procesando...</p>
+        </div>
+      }
+
+      <!-- ============================================
+           CONTENIDO PRINCIPAL (cuando no está cargando)
+           ============================================ -->
+      @if (!loading) {
+        
+        <!-- ============================================
+             ENCABEZADO CON BOTÓN AGREGAR
+             ============================================ -->
+        <div class="section-header">
+          <div>
+            <h2>Marcas</h2>
+            <p class="subtitle">Total: <strong>{{ marcas.length }}</strong> marcas</p>
+          </div>
+          <!-- Botón Agregar (solo visible si NO se muestra el formulario) -->
+          <button class="btn btn-primary" (click)="toggleForm()" *ngIf="!showForm">
+            <i class="fas fa-plus"></i>
+            Agregar Marca
+          </button>
+        </div>
+
+        <!-- ============================================
+             FORMULARIO AGREGAR/EDITAR
+             ============================================ -->
+        @if (showForm) {
+          <div class="form-section animate-fade-in">
+            <div class="form-container">
+              <h3>{{ formTitle }}</h3>
+              
+              <form [formGroup]="form" (ngSubmit)="save()">
+                <div class="form-grid">
+                  <!-- Campo: Nombre (obligatorio) -->
+                  <div class="form-group">
+                    <label for="nombre">Nombre de la Marca *</label>
+                    <input 
+                      id="nombre"
+                      type="text"
+                      formControlName="nombre"
+                      placeholder="Ej: Nike, Adidas, etc"
+                      [class.error]="form.get('nombre')?.invalid && form.get('nombre')?.touched"
+                    />
+                    @if (form.get('nombre')?.hasError('required') && form.get('nombre')?.touched) {
+                      <span class="error-text">El nombre es obligatorio</span>
+                    }
+                    @if (form.get('nombre')?.hasError('minlength') && form.get('nombre')?.touched) {
+                      <span class="error-text">Mínimo 3 caracteres</span>
+                    }
+                  </div>
+
+                  <!-- Campo: Descripción (opcional) -->
+                  <div class="form-group">
+                    <label for="descripcion">Descripción</label>
+                    <textarea 
+                      id="descripcion"
+                      formControlName="descripcion"
+                      placeholder="Descripción opcional de la marca"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <!-- BOTONES DE ACCIÓN DEL FORMULARIO -->
+                <div class="form-actions">
+                  <button type="button" class="btn btn-secondary" (click)="cancel()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                  </button>
+                  <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading">
+                    <span *ngIf="loading">Guardando...</span>
+                    <span *ngIf="!loading">
+                      <i class="fas fa-save"></i>
+                      {{ editingMarcaId ? 'Actualizar' : 'Registrar' }}
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- ============================================
+             TABLA DE MARCAS (listado)
+             ============================================ -->
+        <div class="table-section">
+          @if (marcas.length > 0) {
+            <div class="table-responsive">
+              <table class="marcas-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Recorre cada marca y crea una fila -->
+                  @for (marca of marcas; track marca.id) {
+                    <tr [class.inactive]="!marca.activa">
+                      <td>{{ marca.id }}</td>
+                      <td><strong>{{ marca.nombre }}</strong></td>
+                      <td>{{ marca.descripcion || '-' }}</td>
+                      <td>
+                        <!-- Badge de estado (activa/inactiva) -->
+                        <span class="badge" [class.active]="marca.activa" [class.inactive]="!marca.activa">
+                          {{ marca.activa ? 'Activa' : 'Inactiva' }}
+                        </span>
+                      </td>
+                      <td class="actions">
+                        <!-- Botón: Activar/Desactivar -->
+                        <button 
+                          class="btn-action btn-toggle"
+                          (click)="cambiarEstado(marca)"
+                          [title]="marca.activa ? 'Desactivar' : 'Activar'"
+                        >
+                          <i [class]="marca.activa ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
+                        </button>
+                        
+                        <!-- Botón: Editar -->
+                        <button 
+                          class="btn-action btn-edit"
+                          (click)="edit(marca)"
+                          title="Editar"
+                        >
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        <!-- Botón: Eliminar -->
+                        <button 
+                          class="btn-action btn-delete"
+                          (click)="delete(marca.id)"
+                          title="Eliminar"
+                        >
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <!-- Estado vacío: no hay marcas -->
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <h3>No hay marcas</h3>
+              <p>Comienza agregando tu primera marca</p>
+              <button class="btn btn-primary" (click)="toggleForm()">
+                <i class="fas fa-plus"></i>
+                Agregar Primera Marca
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </main>
+  </div>
+</div>

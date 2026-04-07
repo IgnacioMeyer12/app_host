@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const { Usuario } = require('../models');
 
 // Middleware para verificar token JWT
 const authenticateToken = (req, res, next) => {
@@ -47,8 +46,20 @@ const requireCliente = (req, res, next) => {
   next();
 };
 
+// Middleware para verificar que el usuario sea vendedor
+const requireVendedor = (req, res, next) => {
+  if (!req.user || req.user.rol !== 'vendedor') {
+    return res.status(403).json({
+      success: false,
+      message: 'Acceso denegado. Se requieren permisos de vendedor'
+    });
+  }
+  next();
+};
+
 module.exports = {
   authenticateToken,
   requireAdmin,
-  requireCliente
+  requireCliente,
+  requireVendedor
 };

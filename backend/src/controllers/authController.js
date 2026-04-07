@@ -1,59 +1,71 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Usuario } = require('../models');
+const { Usuario, Cliente, Administrador, Vendedor } = require('../models');
 
 class AuthController {
-  // Registro de usuario
+  // Registro de usuario (adaptado a 3 tablas)
   async register(req, res) {
     try {
       const { dni, nombre, apellido, telefono, password, rol } = req.body;
-
-      // Validaciones
       if (!dni || !nombre || !apellido || !telefono || !password) {
-        return res.status(400).json({
-          success: false,
-          message: 'Todos los campos son obligatorios'
-        });
+        return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios' });
       }
-
-      // Verificar si el usuario ya existe
-      const existingUser = await Usuario.findByPk(dni);
+      const role = (rol || 'cliente').toLowerCase();
+      let Model, roleValue;
+      if (role === 'admin') {
+        Model = Administrador;
+        roleValue = 'admin';
+      } else if (role === 'vendedor') {
+        Model = Vendedor;
+        roleValue = 'vendedor';
+      } else {
+        Model = Cliente;
+        roleValue = 'cliente';
+      }
+      // Verificar si el usuario ya existe en la tabla correspondiente
+      const existingUser = await Model.findOne({ where: { dni } });
       if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: 'El DNI ya está registrado'
-        });
+        return res.status(400).json({ success: false, message: 'El DNI ya está registrado' });
       }
-
-      // Verificar teléfono único
-      const existingPhone = await Usuario.findOne({ where: { telefono } });
+      // Verificar teléfono único en la tabla correspondiente
+      const existingPhone = await Model.findOne({ where: { telefono } });
       if (existingPhone) {
-        return res.status(400).json({
-          success: false,
-          message: 'El teléfono ya está registrado'
-        });
+        return res.status(400).json({ success: false, message: 'El teléfono ya está registrado' });
       }
-
+      // Control de roles: solo admin puede crear admins o vendedores
+      if (['admin', 'vendedor'].includes(role)) {
+        const authHeader = req.headers['authorization'];
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return res.status(403).json({ success: false, message: 'Permisos insuficientes para crear este tipo de usuario' });
+        }
+        const token = authHeader.split(' ')[1];
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'tu_secreto_jwt');
+          if (decoded.rol !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Permisos insuficientes. Solo administradores pueden crear admin/vendedor.' });
+          }
+        } catch (verifyErr) {
+          return res.status(403).json({ success: false, message: 'Token inválido o expirado' });
+        }
+      }
       // Encriptar contraseña
       const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Crear usuario
-      const newUser = await Usuario.create({
+      // Crear usuario en la tabla correspondiente
+      const newUser = await Model.create({
         dni,
         nombre,
         apellido,
         telefono,
         password: hashedPassword,
-        rol: rol || 'cliente'
+        rol: roleValue,
+        activo: true
       });
-
       // Generar token JWT
       const token = jwt.sign(
         { dni: newUser.dni, rol: newUser.rol },
         process.env.JWT_SECRET || 'tu_secreto_jwt',
         { expiresIn: '24h' }
       );
-
       res.status(201).json({
         success: true,
         message: 'Usuario registrado exitosamente',
@@ -66,44 +78,38 @@ class AuthController {
           rol: newUser.rol
         }
       });
-
     } catch (error) {
       console.error('Error en registro:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error del servidor'
-      });
+      res.status(500).json({ success: false, message: 'Error del servidor' });
     }
   }
 
-  // Login de usuario
+  // Login de usuario (adaptado a 3 tablas)
   async login(req, res) {
     try {
       const { dni, password } = req.body;
-
       if (!dni || !password) {
-        return res.status(400).json({
-          success: false,
-          message: 'DNI y contraseña son obligatorios'
-        });
+        return res.status(400).json({ success: false, message: 'DNI y contraseña son obligatorios' });
       }
+      // Buscar usuario en las tres tablas con fallback inteligente
+      const admin = await Administrador.findOne({ where: { dni } });
+      const vendedor = await Vendedor.findOne({ where: { dni } });
+      const cliente = await Cliente.findOne({ where: { dni } });
 
-      // Buscar usuario
-      const user = await Usuario.findByPk(dni);
-      if (!user || !user.activo) {
-        return res.status(401).json({
-          success: false,
-          message: 'Credenciales inválidas'
-        });
-      }
+      // Función auxiliar para validar contraseña y estado
+      const validateLogin = async (candidate) => {
+        if (!candidate || !candidate.activo) return null;
+        const match = await bcrypt.compare(password, candidate.password);
+        return match ? candidate : null;
+      };
 
-      // Verificar contraseña
-      const validPassword = await bcrypt.compare(password, user.password);
-      if (!validPassword) {
-        return res.status(401).json({
-          success: false,
-          message: 'Credenciales inválidas'
-        });
+      // Prioridad: Administrador > Vendedor > Cliente
+      let user = await validateLogin(admin);
+      if (!user) user = await validateLogin(vendedor);
+      if (!user) user = await validateLogin(cliente);
+
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
       }
 
       // Generar token JWT
@@ -112,7 +118,6 @@ class AuthController {
         process.env.JWT_SECRET || 'tu_secreto_jwt',
         { expiresIn: '24h' }
       );
-
       res.json({
         success: true,
         message: 'Login exitoso',
@@ -125,13 +130,9 @@ class AuthController {
           rol: user.rol
         }
       });
-
     } catch (error) {
       console.error('Error en login:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error del servidor'
-      });
+      res.status(500).json({ success: false, message: 'Error del servidor' });
     }
   }
 

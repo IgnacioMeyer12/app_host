@@ -47,13 +47,13 @@ class SucursalesController {
   // Crear sucursal
   async create(req, res) {
     try {
-      const { nombre, direccion, telefono, latitud, longitud } = req.body;
+      const { nombre, direccion, telefono, latitud, longitud, horario_inicio, horario_fin } = req.body;
 
       // Validaciones
-      if (!nombre || !latitud || !longitud) {
+      if (!nombre || !latitud || !longitud || !horario_inicio || !horario_fin) {
         return res.status(400).json({
           success: false,
-          message: 'Nombre, latitud y longitud son obligatorios'
+          message: 'Nombre, latitud, longitud, horario_inicio y horario_fin son obligatorios'
         });
       }
 
@@ -73,13 +73,31 @@ class SucursalesController {
         });
       }
 
+      // Validar horarios (formato HH:mm)
+      const horarioRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+      if (!horarioRegex.test(horario_inicio) || !horarioRegex.test(horario_fin)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Formato de horario inválido. Use HH:mm (ej: 09:00, 18:00)'
+        });
+      }
+
+      if (horario_inicio >= horario_fin) {
+        return res.status(400).json({
+          success: false,
+          message: 'El horario de inicio debe ser anterior al de fin'
+        });
+      }
+
       // Crear sucursal
       const newSucursal = await Sucursal.create({
         nombre,
         direccion,
         telefono,
         latitud: lat,
-        longitud: lng
+        longitud: lng,
+        horario_inicio,
+        horario_fin
       });
 
       res.status(201).json({
@@ -142,7 +160,7 @@ class SucursalesController {
       }
 
       // Actualizar campos permitidos
-      const allowedFields = ['nombre', 'direccion', 'telefono', 'latitud', 'longitud', 'activa'];
+      const allowedFields = ['nombre', 'direccion', 'telefono', 'latitud', 'longitud', 'activa', 'horario_inicio', 'horario_fin'];
       const updateData = {};
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {

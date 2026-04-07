@@ -1,50 +1,40 @@
-const Usuario = require('./Usuario');
 const Vehiculo = require('./Vehiculo');
 const Cita = require('./Cita');
 const Sucursal = require('./Sucursal');
 const Marca = require('./Marca');
 const Vendedor = require('./Vendedor');
 const Calificacion = require('./Calificacion');
+const Cliente = require('./Cliente');
+const Administrador = require('./Administrador');
+const Conversacion = require('./Conversacion');
 
-// Definir relaciones entre modelos
-// Una cita pertenece a un usuario
-Cita.belongsTo(Usuario, {
-  foreignKey: 'dni',
-  targetKey: 'dni',
-  as: 'usuario'
-});
+// Relaciones mínimas para sincronizar tablas
+// Puedes agregar relaciones entre Cliente, Administrador, VendedorNuevo y otras según sea necesario
 
-// Una cita puede estar relacionada con un vehículo
-Cita.belongsTo(Vehiculo, {
-  foreignKey: 'idVehiculo',
-  targetKey: 'idVehiculo',
-  as: 'vehiculo'
-});
-
-// Un usuario puede tener muchas citas
-Usuario.hasMany(Cita, {
-  foreignKey: 'dni',
-  sourceKey: 'dni',
-  as: 'citas'
-});
-
-// Un vehículo puede estar en muchas citas
-Vehiculo.hasMany(Cita, {
-  foreignKey: 'idVehiculo',
-  sourceKey: 'idVehiculo',
-  as: 'citas'
-});
-
-// Un vehículo pertenece a una marca
+// Relación: Un vehículo pertenece a una marca
 Vehiculo.belongsTo(Marca, {
   foreignKey: 'idMarca',
   targetKey: 'id',
   as: 'marca'
 });
 
+// Relación: Un vehículo pertenece a una sucursal
+Vehiculo.belongsTo(Sucursal, {
+  foreignKey: 'idSucursal',
+  targetKey: 'id',
+  as: 'sucursal'
+});
+
 // Una marca puede tener muchos vehículos
 Marca.hasMany(Vehiculo, {
   foreignKey: 'idMarca',
+  sourceKey: 'id',
+  as: 'vehiculos'
+});
+
+// Una sucursal puede tener muchos vehículos
+Sucursal.hasMany(Vehiculo, {
+  foreignKey: 'idSucursal',
   sourceKey: 'id',
   as: 'vehiculos'
 });
@@ -63,25 +53,60 @@ Sucursal.hasMany(Vendedor, {
   as: 'vendedores'
 });
 
-// Un vendedor pertenece a un usuario
-Vendedor.belongsTo(Usuario, {
-  foreignKey: 'dni',
-  targetKey: 'dni',
-  as: 'usuario'
-});
-
-// Un usuario puede ser un vendedor (1:1)
-Usuario.hasOne(Vendedor, {
-  foreignKey: 'dni',
-  sourceKey: 'dni',
-  as: 'vendedor'
-});
-
 // Una cita puede tener un vendedor asignado
 Cita.belongsTo(Vendedor, {
   foreignKey: 'idVendedor',
   targetKey: 'id',
   as: 'vendedor'
+});
+
+// Una cita puede tener un cliente asociado (id)
+Cita.belongsTo(Cliente, {
+  foreignKey: 'idCliente',
+  targetKey: 'id',
+  as: 'cliente'
+});
+
+// Una cita puede tener un administrador asociado (id)
+Cita.belongsTo(Administrador, {
+  foreignKey: 'idAdministrador',
+  targetKey: 'id',
+  as: 'administrador'
+});
+
+// Una cita puede tener un vehículo asociado
+Cita.belongsTo(Vehiculo, {
+  foreignKey: 'idVehiculo',
+  targetKey: 'idVehiculo',
+  as: 'vehiculo'
+});
+
+// Una cita pertenece a una sucursal
+Cita.belongsTo(Sucursal, {
+  foreignKey: 'idSucursal',
+  targetKey: 'id',
+  as: 'sucursal'
+});
+
+// Un vehículo puede tener muchas citas
+Vehiculo.hasMany(Cita, {
+  foreignKey: 'idVehiculo',
+  sourceKey: 'idVehiculo',
+  as: 'citas'
+});
+
+// Un cliente puede tener muchas citas
+Cliente.hasMany(Cita, {
+  foreignKey: 'idCliente',
+  sourceKey: 'id',
+  as: 'citas'
+});
+
+// Un administrador puede tener muchas citas
+Administrador.hasMany(Cita, {
+  foreignKey: 'idAdministrador',
+  sourceKey: 'id',
+  as: 'citas'
 });
 
 // Un vendedor puede tener muchas citas
@@ -120,11 +145,13 @@ Vendedor.hasMany(Calificacion, {
 });
 
 module.exports = {
-  Usuario,
   Vehiculo,
   Cita,
   Sucursal,
   Marca,
   Vendedor,
-  Calificacion
+  Calificacion,
+  Cliente,
+  Administrador,
+  Conversacion
 };
