@@ -1,24 +1,40 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const dbHost = process.env.DB_HOST || 'localhost';
-const dbPort = Number(process.env.DB_PORT || 3306);
-const dbUser = process.env.DB_USER || 'root';
-const dbPassword = process.env.DB_PASSWORD || '';
-const dbName = process.env.DB_NAME || 'automotores_meyer_db';
+// Support Railway's MySQL environment variables, with fallback to generic DB_* vars
+const dbHost = process.env.MYSQLHOST || process.env.DB_HOST || 'localhost';
+const dbPort = Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306);
+const dbUser = process.env.MYSQLUSER || process.env.DB_USER || 'root';
+const dbPassword = process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '';
+const dbName = process.env.MYSQLDATABASE || process.env.DB_NAME || 'automotores_meyer_db';
 
-const sequelize = new Sequelize(dbName, dbUser, dbPassword, {
-  host: dbHost,
-  port: dbPort,
-  dialect: 'mysql',
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
-  define: {
-    timestamps: true,
-    underscored: true,
-    createdAt: 'fecha_creacion',
-    updatedAt: 'fecha_actualizacion'
-  }
-});
+let sequelize;
+
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'mysql',
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    define: {
+      timestamps: true,
+      underscored: true,
+      createdAt: 'fecha_creacion',
+      updatedAt: 'fecha_actualizacion'
+    }
+  });
+} else {
+  sequelize = new Sequelize(dbName, dbUser, dbPassword, {
+    host: dbHost,
+    port: dbPort,
+    dialect: 'mysql',
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    define: {
+      timestamps: true,
+      underscored: true,
+      createdAt: 'fecha_creacion',
+      updatedAt: 'fecha_actualizacion'
+    }
+  });
+}
 
 const testConnection = async () => {
   try {
