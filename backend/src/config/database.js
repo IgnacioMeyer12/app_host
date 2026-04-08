@@ -1,53 +1,37 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+// Support Railway's MySQL environment variables, with fallback to generic DB_* vars
+const dbHost = process.env.MYSQLHOST || process.env.DB_HOST || 'localhost';
+const dbPort = Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306);
+const dbUser = process.env.MYSQLUSER || process.env.DB_USER || 'root';
+const dbPassword = process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '';
+const dbName = process.env.MYSQLDATABASE || process.env.DB_NAME || 'automotores_meyer_db';
+
 let sequelize;
 
-const dbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL;
-const dbHost = process.env.DB_HOST || process.env.MYSQLHOST || process.env.MYSQL_HOST || process.env.RAILWAY_PRIVATE_DOMAIN || 'localhost';
-const dbPort = Number(process.env.DB_PORT || process.env.MYSQLPORT || process.env.MYSQL_PORT || 3306);
-const dbUser = process.env.DB_USER || process.env.MYSQLUSER || process.env.MYSQL_USER || 'root';
-const dbPassword = process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || '';
-const dbName = process.env.DB_NAME || process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'automotores_meyer_db';
-
-if (dbUrl) {
-  // Para Railway u otros servicios que proporcionan URL de conexión
-  sequelize = new Sequelize(dbUrl, {
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'mysql',
-    dialectModule: require('mysql2'),
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
       timestamps: true,
       underscored: true,
       createdAt: 'fecha_creacion',
       updatedAt: 'fecha_actualizacion'
-    },
-    pool: {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
     }
   });
 } else {
-  // Configuración local o Railway con vars separadas
   sequelize = new Sequelize(dbName, dbUser, dbPassword, {
     host: dbHost,
     port: dbPort,
     dialect: 'mysql',
-    dialectModule: require('mysql2'),
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
       timestamps: true,
       underscored: true,
       createdAt: 'fecha_creacion',
       updatedAt: 'fecha_actualizacion'
-    },
-    pool: {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
     }
   });
 }
@@ -59,9 +43,34 @@ const testConnection = async () => {
     await sequelize.sync({ alter: true }); // Sincroniza cambios en modelos con DB (añade columnas faltantes)
     console.log('✅ Modelos sincronizados con la base de datos (alter mode)');
   } catch (error) {
-    console.error('❌ Error al conectar con MySQL:', error.message);
-    console.log('💡 Verifica: credenciales, host, puerto en Railway');
-    throw error;
+    if (error.original && error.original.code === 'ER_BAD_DB_ERROR') {
+      console.log(`⚠️ La base de datos ${dbName} no existe. Creándola...`);
+
+      const serverSequelize = new Sequelize('', dbUser, dbPassword, {
+        host: dbHost,
+        port: dbPort,
+        dialect: 'mysql',
+        logging: false
+      });
+
+      try {
+        await serverSequelize.authenticate();
+        await serverSequelize.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;`);
+        console.log(`✅ Base de datos '${dbName}' creada`);
+        await serverSequelize.close();
+
+        await sequelize.authenticate();
+        await sequelize.sync({ force: false });
+        console.log('✅ Modelos sincronizados con la base de datos');
+      } catch (innerError) {
+        console.error('❌ No se pudo crear la base de datos:', innerError.message);
+        throw innerError;
+      }
+    } else {
+      console.error('❌ Error al conectar con MySQL:', error.message);
+      console.log('💡 Verifica: XAMPP/MySQL activo, credenciales, host, puerto');
+      throw error;
+    }
   }
 };
 
