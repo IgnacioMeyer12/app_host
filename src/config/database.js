@@ -69,7 +69,11 @@ const testConnection = async () => {
     } else {
       console.error('❌ Error al conectar con MySQL:', error.message);
       console.log('💡 Verifica: XAMPP/MySQL activo, credenciales, host, puerto');
-      throw error;
+      console.log('⚠️ El servidor continuará sin conexión a BD - las rutas devolverán errores 500');
+      // En producción, no salir del proceso - permitir que el servidor siga corriendo
+      if (process.env.NODE_ENV === 'development') {
+        throw error;
+      }
     }
   }
 };
