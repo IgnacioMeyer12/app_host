@@ -25,6 +25,7 @@ const allowedOrigins = [
   'http://localhost:4200',
   'http://127.0.0.1:4200',
   'https://IgnacioMeyer12.github.io', // GitHub Pages en producción
+  'https://agent-69d597cd037fd9a70c9bf29--automotores-meyer.netlify.app', // Netlify
 ];
 
 // Agregar origen dinámico si está en Render
