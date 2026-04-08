@@ -1,0 +1,294 @@
+<!-- ============================================
+     VISTA ADMINISTRAR VENDEDORES (administrar-vendedores.component.html)
+     ============================================
+     Panel de administración para gestionar vendedores.
+     Incluye:
+     - Listado completo de vendedores (activos e inactivos)
+     - Formulario con datos personales, sucursal y estado
+     - Acciones: activar/desactivar, editar, eliminar
+     ============================================ -->
+
+<!-- CONTENEDOR PRINCIPAL -->
+<div class="administrar-vendedores-container">
+  
+  <!-- TARJETA PRINCIPAL -->
+  <div class="administrar-vendedores-card">
+    
+    <!-- ============================================
+         BOTÓN VOLVER
+         ============================================ -->
+    <button class="btn btn-back-menu" routerLink="/">← Volver al menú</button>
+    
+    <!-- ============================================
+         TÍTULO DE LA PÁGINA
+         ============================================ -->
+    <h2>Administrar Vendedores</h2>
+    
+    <!-- ============================================
+         CONTENIDO PRINCIPAL
+         ============================================ -->
+    <main class="main-content">
+      
+      <!-- ============================================
+           MENSAJE DE ERROR (con animación)
+           ============================================ -->
+      <div *ngIf="error" class="alert alert-error animate-slide-in">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>{{ error }}</span>
+      </div>
+
+      <!-- ============================================
+           MENSAJE DE ÉXITO (con animación)
+           ============================================ -->
+      <div *ngIf="message" class="alert alert-success animate-slide-in">
+        <i class="fas fa-check-circle"></i>
+        <span>{{ message }}</span>
+      </div>
+
+      <!-- ============================================
+           INDICADOR DE CARGA (spinner)
+           ============================================ -->
+      <div *ngIf="loading" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Procesando...</p>
+      </div>
+
+      <!-- ============================================
+           CONTENIDO PRINCIPAL (cuando no está cargando)
+           ============================================ -->
+      <ng-container *ngIf="!loading">
+        
+        <!-- ============================================
+             ENCABEZADO CON BOTÓN AGREGAR
+             ============================================ -->
+        <div class="section-header">
+          <div>
+            <h2>Vendedores</h2>
+            <p class="subtitle">Total: <strong>{{ vendedores.length }}</strong> vendedores</p>
+          </div>
+          <!-- Botón Agregar (solo visible si NO se muestra el formulario) -->
+          <button class="btn btn-primary" (click)="toggleForm()" *ngIf="!showForm">
+            <i class="fas fa-plus"></i>
+            Agregar Vendedor
+          </button>
+        </div>
+
+        <!-- ============================================
+             FORMULARIO AGREGAR/EDITAR
+             ============================================ -->
+        <ng-container *ngIf="showForm">
+          <div class="form-section animate-fade-in">
+            <div class="form-container">
+              <h3>{{ formTitle }}</h3>
+              
+              <form [formGroup]="form" (ngSubmit)="submit()">
+                <div class="form-grid">
+                  <!-- Campo: DNI (obligatorio) -->
+                  <div class="form-group">
+                    <label for="dni">DNI *</label>
+                    <input 
+                      id="dni"
+                      type="text"
+                      formControlName="dni"
+                      placeholder="Ej: 12345678"
+                      [class.error]="form.get('dni')?.invalid && form.get('dni')?.touched"
+                    />
+                    <span class="error-text" *ngIf="form.get('dni')?.hasError('required') && form.get('dni')?.touched">El DNI es obligatorio</span>
+                    <span class="error-text" *ngIf="form.get('dni')?.hasError('pattern') && form.get('dni')?.touched">Ingrese un DNI válido (7 u 8 dígitos)</span>
+                  </div>
+
+                  <!-- Campo: Sucursal (obligatorio) -->
+                  <div class="form-group">
+                    <label for="idSucursal">Sucursal *</label>
+                    <select 
+                      id="idSucursal"
+                      formControlName="idSucursal"
+                      [class.error]="form.get('idSucursal')?.invalid && form.get('idSucursal')?.touched"
+                    >
+                      <option value="">Seleccione una sucursal</option>
+                      <option *ngFor="let sucursal of sucursales" [value]="sucursal.id">{{ sucursal.nombre }}</option>
+                    </select>
+                    <span class="error-text" *ngIf="form.get('idSucursal')?.hasError('required') && form.get('idSucursal')?.touched">Debe seleccionar una sucursal</span>
+                  </div>
+
+                  <!-- Datos del usuario (agrupados) -->
+                  <div class="form-group full-width">
+                    <label>Datos del Vendedor</label>
+                    <div class="subform-grid">
+                      <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input 
+                          id="nombre"
+                          type="text"
+                          formControlName="nombre"
+                          placeholder="Nombre"
+                          [class.error]="form.get('nombre')?.invalid && form.get('nombre')?.touched"
+                        />
+
+                      </div>
+
+                      <div class="form-group">
+                        <label for="apellido">Apellido *</label>
+                        <input 
+                          id="apellido"
+                          type="text"
+                          formControlName="apellido"
+                          placeholder="Apellido"
+                          [class.error]="form.get('apellido')?.invalid && form.get('apellido')?.touched"
+                        />
+
+                      </div>
+
+                      <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input 
+                          id="telefono"
+                          type="tel"
+                          formControlName="telefono"
+                          placeholder="Ej: 341 1234567"
+                        />
+                      </div>
+
+                      <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input 
+                          id="password"
+                          type="password"
+                          formControlName="password"
+                          placeholder="Mínimo 6 caracteres"
+                        />
+                        <span class="error-text" *ngIf="form.get('password')?.hasError('required') && form.get('password')?.touched">La contraseña es obligatoria</span>
+                        <span class="error-text" *ngIf="form.get('password')?.hasError('minlength') && form.get('password')?.touched">La contraseña debe tener al menos 6 caracteres</span>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="email">Email</label>
+                        <input 
+                          id="email"
+                          type="email"
+                          formControlName="email"
+                          placeholder="correo@ejemplo.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Campo: Activo (Sí/No) -->
+                  <div class="form-group">
+                    <label for="activo">Estado</label>
+                    <select id="activo" formControlName="activo">
+                      <option [ngValue]="true">Activo</option>
+                      <option [ngValue]="false">Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- BOTONES DE ACCIÓN DEL FORMULARIO -->
+                <div class="form-actions">
+                  <button type="button" class="btn btn-secondary" (click)="cancel()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                  </button>
+                  <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading">
+                    <span *ngIf="loading">Guardando...</span>
+                    <span *ngIf="!loading">
+                      <i class="fas fa-save"></i>
+                      {{ editingId ? 'Actualizar' : 'Registrar' }}
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- ============================================
+             TABLA DE VENDEDORES (listado)
+             ============================================ -->
+        <div class="table-section">
+          <ng-container *ngIf="vendedores.length > 0; else emptyState">
+            <div class="table-responsive">
+              <table class="vendedores-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>DNI</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Teléfono</th>
+                    <th>Sucursal</th>
+                    <th>Estado</th>
+                    <th>Calificación</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let vendedor of vendedores" [class.inactive]="!vendedor.activo">
+                    <td>{{ vendedor.id }}</td>
+                    <td>{{ vendedor.dni }}</td>
+                    <td><strong>{{ vendedor.nombre || '-' }}</strong></td>
+                    <td>{{ vendedor.apellido || '-' }}</td>
+                    <td>{{ vendedor.telefono || '-' }}</td>
+                    <td>{{ vendedor.sucursal?.nombre || '-' }}</td>
+                    <td>
+                      <!-- Badge de estado (activo/inactivo) -->
+                      <span class="badge" [class.active]="vendedor.activo" [class.inactive]="!vendedor.activo">
+                        {{ vendedor.activo ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="rating">
+                        {{ vendedor.puntuacionPromedio || 0 }}
+                        <small>({{ vendedor.totalCalificaciones || 0 }})</small>
+                      </span>
+                    </td>
+                    <td class="actions">
+                        <!-- Botón: Activar/Desactivar -->
+                        <button 
+                          class="btn-action btn-toggle"
+                          (click)="cambiarEstado(vendedor)"
+                          [title]="vendedor.activo ? 'Desactivar' : 'Activar'"
+                        >
+                          <i [class]="vendedor.activo ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
+                        </button>
+                        
+                        <!-- Botón: Editar -->
+                        <button 
+                          class="btn-action btn-edit"
+                          (click)="editar(vendedor)"
+                          title="Editar"
+                        >
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        <!-- Botón: Eliminar -->
+                        <button 
+                          class="btn-action btn-delete"
+                          (click)="eliminar(vendedor)"
+                          title="Eliminar"
+                        >
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+          <ng-template #emptyState>
+            <!-- Estado vacío: no hay vendedores -->
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <h3>No hay vendedores</h3>
+              <p>Comienza agregando tu primer vendedor</p>
+              <button class="btn btn-primary" (click)="toggleForm()">
+                <i class="fas fa-plus"></i>
+                Agregar Primer Vendedor
+              </button>
+            </div>
+          </ng-template>
+        </div>
+      </ng-container>
+    </main>
+  </div>
+</div>
