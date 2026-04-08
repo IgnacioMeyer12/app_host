@@ -45,6 +45,15 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Servir archivos estáticos (uploads)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
+// ✅ Ruta raíz (mover al principio)
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API Automotores Meyer',
+    version: '1.0.0'
+  });
+});
+
 app.post('/api/upload', uploadMultiple, (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -77,15 +86,6 @@ app.get('/api/health', (req, res) => {
     message: 'API funcionando correctamente',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// ✅ Ruta raíz
-app.get('/', (req, res) => {
-  res.json({ 
-    success: true, 
-    message: 'API Automotores Meyer',
-    version: '1.0.0'
   });
 });
 
