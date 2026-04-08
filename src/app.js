@@ -45,15 +45,6 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Servir archivos estáticos (uploads)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
-// ✅ Ruta raíz (mover al principio)
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'API Automotores Meyer',
-    version: '1.0.0'
-  });
-});
-
 app.post('/api/upload', uploadMultiple, (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -89,6 +80,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ✅ Ruta raíz
+app.get('/', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'API Automotores Meyer',
+    version: '1.0.0'
+  });
+});
+
 // ✅ Manejo de rutas no encontradas
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Ruta no encontrada' });
@@ -104,7 +104,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = Number(process.env.PORT || 8080);
+const PORT = Number(process.env.PORT || 3000);
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 async function startServer() {
