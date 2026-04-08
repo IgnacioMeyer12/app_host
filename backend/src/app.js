@@ -28,11 +28,6 @@ const allowedOrigins = [
   'https://agent-69d597cd037fd9a70c9bf29--automotores-meyer.netlify.app', // Netlify
 ];
 
-// Agregar origen dinámico si está en Render
-if (process.env.NODE_ENV === 'production') {
-  allowedOrigins.push(process.env.FRONTEND_URL || 'https://IgnacioMeyer12.github.io');
-}
-
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
