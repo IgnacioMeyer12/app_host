@@ -20,20 +20,31 @@ const path = require('path');
 
 const app = express();
 
-// ✅ CORS actualizado para Railway y Render
+// ✅ CORS actualizado para Railway y Netlify
 const allowedOrigins = [
   'http://localhost:4200',
   'http://127.0.0.1:4200',
-  'https://IgnacioMeyer12.github.io', // GitHub Pages en producción
+  'https://IgnacioMeyer12.github.io', // GitHub Pages
+  'https://automotores-meyer.netlify.app', // Netlify producción
 ];
 
-// Agregar origen dinámico si está en Render
-if (process.env.NODE_ENV === 'production') {
-  allowedOrigins.push(process.env.FRONTEND_URL || 'https://IgnacioMeyer12.github.io');
+// Agregar origen dinámico desde variable de entorno (Netlify deploy previews, etc.)
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
 }
 
+// Permitir todos los subdominios de netlify.app en producción (deploy previews)
+const netlifyPreviewPattern = /^https:\/\/[a-z0-9-]+--automotores-meyer\.netlify\.app$/;
+
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || netlifyPreviewPattern.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
