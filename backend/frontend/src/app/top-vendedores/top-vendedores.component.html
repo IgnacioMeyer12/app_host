@@ -1,0 +1,28 @@
+<div class="container">
+  <h2>Top Vendedores</h2>
+    <!-- BOTÓN VOLVER: Navega a home con routerLink="/" -->
+  <button class="btn btn-back-menu" routerLink="/">← Volver al menú</button>
+  <div *ngIf="loading" class="loading">Cargando ranking...</div>
+  <div *ngIf="message && !loading" class="message">{{ message }}</div>
+  <table *ngIf="!loading && ranking.length > 0" class="ranking-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Vendedor</th>
+        <th>Sucursal</th>
+        <th>Promedio ★</th>
+        <th>Cant. Calificaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let v of ranking; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ v.nombre }}</td>
+        <td>{{ v.sucursal }}</td>
+        <td>{{ v.promedio }}</td>
+        <td>{{ v.totalCalificaciones }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div *ngIf="!loading && ranking.length === 0" class="message">No hay vendedores con suficientes calificaciones.</div>
+</div>
