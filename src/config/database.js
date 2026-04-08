@@ -10,8 +10,8 @@ const dbName = process.env.MYSQLDATABASE || process.env.DB_NAME || 'automotores_
 
 let sequelize;
 
-if (process.env.DATABASE_URL) {
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL || process.env.MYSQL_URL, {
     dialect: 'mysql',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
@@ -37,13 +37,20 @@ if (process.env.DATABASE_URL) {
 }
 
 const testConnection = async () => {
+  console.log(`🔍 Intentando conectar a MySQL:`);
+  console.log(`  Host: ${dbHost}`);
+  console.log(`  Puerto: ${dbPort}`);
+  console.log(`  Usuario: ${dbUser}`);
+  console.log(`  Base de datos: ${dbName}`);
+  console.log(`  Usando DATABASE_URL/MYSQL_URL: ${!!(process.env.DATABASE_URL || process.env.MYSQL_URL)}`);
+
   try {
     await sequelize.authenticate();
     console.log(`✅ Conexión a MySQL (${dbName}) establecida correctamente`);
     await sequelize.sync({ alter: true }); // Sincroniza cambios en modelos con DB (añade columnas faltantes)
     console.log('✅ Modelos sincronizados con la base de datos (alter mode)');
   } catch (error) {
-    if (error.original && error.original.code === 'ER_BAD_DB_ERROR') {
+    if (error.original && error.original.code === 'ER_BAD_DB_ERROR' && process.env.NODE_ENV === 'development') {
       console.log(`⚠️ La base de datos ${dbName} no existe. Creándola...`);
 
       const serverSequelize = new Sequelize('', dbUser, dbPassword, {
@@ -68,7 +75,7 @@ const testConnection = async () => {
       }
     } else {
       console.error('❌ Error al conectar con MySQL:', error.message);
-      console.log('💡 Verifica: XAMPP/MySQL activo, credenciales, host, puerto');
+      console.log('💡 Verifica: credenciales, host, puerto en Railway');
       console.log('⚠️ El servidor continuará sin conexión a BD - las rutas devolverán errores 500');
       // En producción, no salir del proceso - permitir que el servidor siga corriendo
       if (process.env.NODE_ENV === 'development') {
